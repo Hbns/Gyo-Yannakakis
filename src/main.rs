@@ -6,7 +6,7 @@ use std::fs::File;
 use std::sync::Arc;
 mod queries;
 mod gyo;
-use gyo::collect_ears;
+use gyo::{collect_ears,remove_unique_items};
 
 use queries::create_example_query;
 
@@ -58,7 +58,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let query = create_example_query();
     println!("{:?}", query);
     // Call collect_ears function
-    collect_ears(&query);
+    let mut ears = collect_ears(&query);
+    remove_unique_items(&mut ears);
+    print!("{:?}", ears);
 
     Ok(())
 }

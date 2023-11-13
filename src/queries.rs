@@ -2,22 +2,13 @@
 
 // Query data structure:
 // Define a struct to represent a term, which can be a constant or a Utf8String.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Term {
     Utf8String(String),
-    Float(f64),
-    Integer(i64),
+    Integer(i64)
 }
 
-impl Term {
-    fn clone_term(&self) -> Term {
-        match self {
-            Term::Utf8String(s) => Term::Utf8String(s.clone()),
-            Term::Float(f) => Term::Float(*f),
-            Term::Integer(i) => Term::Integer(*i),
-        }
-    }
-}
+
 
 // Define a struct to represent an atom with a relation name and a tuple of terms.
 #[derive(Debug)]
@@ -53,15 +44,15 @@ pub fn create_example_query() -> ConjunctiveQuery {
     };
     let beers = Atom {
         name: "Beers".to_string(),
-        terms: vec![vbeer_id, vbrew_id, vbeer, vabv, vibu, vounces, vstyle, vstyle2],
+        terms: vec![vbeer_id, vbrew_id, vbeer, vabv, vibu, vounces, vstyle.clone(), vstyle2],
     };
     let styles = Atom {
         name: "Styles".to_string(),
-        terms: vec![vstyle_id, vcat_id.clone_term(), vstyle4],
+        terms: vec![vstyle_id, vcat_id.clone(), vstyle.clone()],
     };
     let categories = Atom {
         name: "Categories".to_string(),
-        terms: vec![vcat_id.clone_term(), cbelfre],
+        terms: vec![vcat_id.clone(), cbelfre],
     };
 
     ConjunctiveQuery {
