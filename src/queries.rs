@@ -22,15 +22,15 @@ impl Term {
 // Define a struct to represent an atom with a relation name and a tuple of terms.
 #[derive(Debug)]
 pub struct Atom {
-    name: String,
-    terms: Vec<Term>,
+    pub name: String,
+    pub terms: Vec<Term>,
 }
 
 // Define a struct to represent a conjunctive query.
 #[derive(Debug)]
 pub struct ConjunctiveQuery {
-    head_atom: Atom,
-    body_atoms: Vec<Atom>,
+    pub head_atom: Atom,
+    pub body_atoms: Vec<Atom>,
 }
 
 pub fn create_example_query() -> ConjunctiveQuery {
@@ -44,7 +44,7 @@ pub fn create_example_query() -> ConjunctiveQuery {
     let vstyle2 = Term::Utf8String("style2".to_string());
     let vstyle_id = Term::Utf8String("style_id".to_string());
     let vcat_id = Term::Utf8String("cat_id".to_string());
-    let vstyle4 = Term::Utf8String("style4".to_string());
+    let vstyle = Term::Utf8String("style".to_string());
     let cbelfre = Term::Utf8String("Belgian and French Ale".to_string());
 
     let answer = Atom {

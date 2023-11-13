@@ -5,6 +5,8 @@ use std::error::Error;
 use std::fs::File;
 use std::sync::Arc;
 mod queries;
+mod gyo;
+use gyo::collect_ears;
 
 use queries::create_example_query;
 
@@ -52,9 +54,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         process_file(file_path, Arc::new(schema))?;
     }
-
+    // print the example query F1
     let query = create_example_query();
     println!("{:?}", query);
+    // Call collect_ears function
+    collect_ears(&query);
 
     Ok(())
 }
