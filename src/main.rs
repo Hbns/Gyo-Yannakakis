@@ -6,7 +6,7 @@ use std::fs::File;
 use std::sync::Arc;
 
 mod queries;
-use queries::create_example_query;
+use queries::{create_example_query, create_cyclic_example_query};
 
 mod gyo;
 use gyo::acyclic_test;
@@ -63,6 +63,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("{:?}", query);
     // Call collect_ears function
     acyclic_test(&query);
+
+    let cquery = create_cyclic_example_query();
+    println!("{:?}", cquery);
+    acyclic_test(&cquery);
 
     Ok(())
 }
