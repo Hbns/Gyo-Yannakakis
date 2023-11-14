@@ -4,11 +4,15 @@ use arrow::record_batch::RecordBatch;
 use std::error::Error;
 use std::fs::File;
 use std::sync::Arc;
-mod queries;
-mod gyo;
-use gyo::{collect_ears,remove_unique_items};
 
+mod queries;
 use queries::create_example_query;
+
+mod gyo;
+use gyo::acyclic_test;
+
+
+
 
 fn process_file(file_path: &str, schema: Arc<Schema>) -> Result<(), Box<dyn Error>> {
     let file = File::open(file_path)?;
@@ -58,9 +62,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let query = create_example_query();
     println!("{:?}", query);
     // Call collect_ears function
-    let mut ears = collect_ears(&query);
-    remove_unique_items(&mut ears);
-    print!("{:?}", ears);
+    acyclic_test(&query);
 
     Ok(())
 }

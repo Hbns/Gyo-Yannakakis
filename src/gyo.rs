@@ -8,24 +8,39 @@ Group1:     exists out of nodes that are unique to the hyperedge (not shared wit
 Group2:     exists out of nodes that appear in other hyperedges.
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 Gyo reduction:
-Repeatedly remove ears untill we can't remove anymore, if nothing left = acyclic.
-Removing an ear means: remove the nodes from group1, remove that hyperedge (for which nodes in group1  where unique),
-leave the nodes from group2 in their "other" hyperedge.
-
---> A hyperedge is an ear if all vertices are exclusive to thet hyperedge
-OR there exists another hyperedge w such that every vertex in e is either exclusive to e or also occuring in w.
-
---> repeatedly apply the follwowing operations (in no particular order):
+Repeatedly apply the follwowing operations (in no particular order):
 1. Delete a vertex that appears in at most one hyperedge.
 2. Delete a hyperedge that is contained in another hyperedge.
 
 Gyo reduction is performed on the body atoms of the conjunctive query.
 */
 
-use crate::queries::{Atom, ConjunctiveQuery, Term};
+use crate::queries::{ConjunctiveQuery, Term};
 use std::collections::HashSet;
 
-pub fn collect_ears(query: &ConjunctiveQuery) -> Vec<Vec<Term>> {
+pub fn acyclic_test(query: &ConjunctiveQuery) {
+    // make mutable vector containing all ears.
+    let mut ears = collect_ears(&query);
+
+    // Perform GYO:
+
+    // Delete all vertex that appears in at most one hyperedge.
+    remove_unique_items(&mut ears);
+    // Delete a hyperedge that is contained in another hyperedge.
+    remove_single_item_vectors(&mut ears);
+    // Delete all vertex that appears in at most one hyperedge.
+    remove_unique_items(&mut ears);
+
+    // print!("{:?}", ears);
+    // print (a)cyclic depending on items left in the ears vector
+    if ears.iter().any(|vector| !vector.is_empty()) {
+        println!("cyclic");
+    } else {
+        println!("acyclic");
+    }
+}
+
+fn collect_ears(query: &ConjunctiveQuery) -> Vec<Vec<Term>> {
     // Initialize a vector to store the terms vectors
     let mut ears: Vec<Vec<Term>> = Vec::new();
 
@@ -40,14 +55,7 @@ pub fn collect_ears(query: &ConjunctiveQuery) -> Vec<Vec<Term>> {
     ears
 }
 
-pub fn find_and_print_ears(atom: &Atom) {
-    // For simplicity, this function just prints the terms of the atom
-    println!("Ears for {}: {:?}", atom.name, atom.terms);
-    // You would implement the actual ear detection logic here
-    // This could involve more complex analysis based on the specific criteria for ears
-}
-
-pub fn remove_unique_items(vectors: &mut Vec<Vec<Term>>) {
+fn remove_unique_items(vectors: &mut Vec<Vec<Term>>) {
     // Step 1: Create a HashSet for each vector
     let mut unique_items: Vec<HashSet<Term>> = vectors.iter().map(|_| HashSet::new()).collect();
 
@@ -69,4 +77,30 @@ pub fn remove_unique_items(vectors: &mut Vec<Vec<Term>>) {
                 > 0
         });
     }
+}
+
+fn remove_single_item_vectors(vectors: &mut Vec<Vec<Term>>) {
+    // Step 1: Find vectors of size one
+    let single_item_vectors: Vec<_> = vectors
+        .iter()
+        .filter(|vector| vector.len() == 1)
+        .cloned()
+        .collect();
+
+    // Step 2: Create a HashSet of items in vectors with size > 1
+    let items_in_multi_item_vectors: HashSet<_> = vectors
+        .iter()
+        .filter(|vector| vector.len() > 1)
+        .flat_map(|vector| vector.iter().cloned())
+        .collect();
+
+    // Step 3: Remove vectors of size one if the item exists in another vector
+    vectors.retain(|vector| {
+        if vector.len() == 1 {
+            let item = &vector[0];
+            !items_in_multi_item_vectors.contains(item)
+        } else {
+            true
+        }
+    });
 }
