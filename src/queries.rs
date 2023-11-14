@@ -75,8 +75,8 @@ pub fn create_cyclic_example_query() -> ConjunctiveQuery {
     let e = Term::Utf8String("e".to_string());
     let f = Term::Utf8String("f".to_string());
 
-    let answer = Atom {
-        name: "Answer".to_string(),
+    let cyclic_query = Atom {
+        name: "cyclic_query".to_string(),
         terms: vec![],
     };
     let abc = Atom {
@@ -100,7 +100,7 @@ pub fn create_cyclic_example_query() -> ConjunctiveQuery {
         terms: vec![c.clone(), e.clone()],
     };
     ConjunctiveQuery {
-        head_atom: answer,
+        head_atom: cyclic_query,
         body_atoms: vec![abc, bc, cd, bef, ce],
     }
 }

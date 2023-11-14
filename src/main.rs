@@ -11,7 +11,8 @@ use queries::{create_example_query, create_cyclic_example_query};
 mod gyo;
 use gyo::acyclic_test;
 
-
+mod jointrees;
+use jointrees::build_join_tree;
 
 
 fn process_file(file_path: &str, schema: Arc<Schema>) -> Result<(), Box<dyn Error>> {
@@ -67,6 +68,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let cquery = create_cyclic_example_query();
     println!("{:?}", cquery);
     acyclic_test(&cquery);
+
+    let join_tree = build_join_tree(&query.body_atoms);
+    println!("{:?}", join_tree);
 
     Ok(())
 }
