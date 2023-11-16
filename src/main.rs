@@ -1,4 +1,4 @@
-use arrow::csv::{ReaderBuilder, self};
+use arrow::csv::{self, ReaderBuilder};
 use arrow::datatypes::Schema;
 use arrow::record_batch::RecordBatch;
 use std::error::Error;
@@ -6,25 +6,24 @@ use std::fs::File;
 use std::sync::Arc;
 
 mod queries;
-use queries::{create_example_query, create_cyclic_example_query};
+use queries::{create_cyclic_example_query, create_example_query};
 
 mod gyo;
 use gyo::acyclic_test;
 
 mod jointrees;
-use jointrees::build_join_tree;
+use jointrees::{build_join_tree, semi_join,semi_join2};
 
+use crate::jointrees::full_reducer;
 
-fn process_file(file_path: &str, schema: Arc<Schema>) -> Result<(), Box<dyn Error>> {
+fn process_file(file_path: &str, schema: Arc<Schema>) -> Result<RecordBatch, Box<dyn Error>> {
     let file = File::open(file_path)?;
-    let mut csv = ReaderBuilder::new(schema)
-        .has_header(true)
-        .build(file)?;
+    let mut csv = ReaderBuilder::new(schema).has_header(true).build(file)?;
     let batch = csv.next().ok_or("No record batch found")??;
 
-    // Process the batch
-    // Print the schema
-    // println!("Schema: {:?}", batch.schema());
+    //Process the batch
+    //Print the schema
+    println!("Schema: {:?}", batch.schema());
 
     /*
     // Print the data in the RecordBatch
@@ -35,7 +34,7 @@ fn process_file(file_path: &str, schema: Arc<Schema>) -> Result<(), Box<dyn Erro
     */
     println!("Successfully read a batch from file: {}", file_path);
 
-    Ok(())
+    Ok(batch)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -46,10 +45,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let locations = "./data/locations.csv";
     let styles = "./data/styles.csv";
     let data = vec![beers, breweries, categories, locations, styles];
+    let mut record_batches: Vec<RecordBatch> = Vec::new();
 
     for file_path in data {
-        let schema = match csv::infer_schema_from_files(&[file_path.to_string()], 
-        b',', None, true) {
+        let schema = match csv::infer_schema_from_files(&[file_path.to_string()], b',', None, true)
+        {
             Ok(schema) => schema,
             Err(error) => {
                 eprintln!("An error occurred: {:?}", error);
@@ -57,20 +57,28 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         };
 
-        process_file(file_path, Arc::new(schema))?;
+        // Call process_file and store the returned RecordBatch in the vector
+        let batch = process_file(file_path, Arc::new(schema))?;
+        record_batches.push(batch);
     }
+
+    let result = semi_join2(&record_batches[0], &record_batches[1], 1, 0);
+    println!("{:?}", result);
+    //println!("{:?}", record_batches);
     // print the example query F1
     let query = create_example_query();
-    println!("{:?}", query);
+    //println!("{:?}", query);
     // Call collect_ears function
-    acyclic_test(&query);
+    //acyclic_test(&query);
 
-    let cquery = create_cyclic_example_query();
-    println!("{:?}", cquery);
-    acyclic_test(&cquery);
+    //let cquery = create_cyclic_example_query();
+    //println!("{:?}", cquery);
+    //acyclic_test(&cquery);
 
     let join_tree = build_join_tree(&query.body_atoms);
     println!("{:?}", join_tree);
+    let reduceddb = full_reducer(&join_tree, &record_batches);
+    println!("Globally consistent: {:?}", reduceddb);
 
     Ok(())
 }
