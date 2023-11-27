@@ -4,14 +4,14 @@
 // Define a struct to represent a term, which can be a constant or a Utf8String.
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Term {
-    Utf8String(String),
-    Integer(i64),
+    Constant(&'static str),
+    Variable(&'static str),
 }
 // Define a struct to represent an atom with a relation name and a tuple of terms.
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Atom {
-    pub name: String,
-    pub terms: Vec<Term>,
+    pub name: (&'static str),
+    pub terms: Vec<&'static Term>,
 }
 
 // Define a struct to represent a conjunctive query.
@@ -22,42 +22,44 @@ pub struct ConjunctiveQuery {
 }
 
 pub fn create_example_query() -> ConjunctiveQuery {
-    let vbeer_id = Term::Utf8String("beer_id".to_string());
-    let vbrew_id = Term::Utf8String("brew_id".to_string());
-    let vbeer = Term::Utf8String("beer".to_string());
-    let vabv = Term::Utf8String("abv".to_string());
-    let vibu = Term::Utf8String("ibu".to_string());
-    let vounces = Term::Utf8String("ounces".to_string());
-    let vstyle2 = Term::Utf8String("style2".to_string());
-    let vstyle_id = Term::Utf8String("style_id".to_string());
-    let vcat_id = Term::Utf8String("cat_id".to_string());
-    let vstyle = Term::Utf8String("style".to_string());
-    let cbelfre = Term::Utf8String("Belgian and French Ale".to_string());
+    // Varibales
+    let beer_id = &Term::Variable("beer_id");
+    let brew_id = &Term::Variable("brew_id");
+    let beer = &Term::Variable("beer");
+    let abv = &Term::Variable("abv");
+    let ibu = &Term::Variable("ibu");
+    let ounces = &Term::Variable("ounces");
+    let style2 = &Term::Variable("style2");
+    let style_id = &Term::Variable("style_id");
+    let cat_id = &Term::Variable("cat_id");
+    let style = &Term::Variable("style");
+    // Constants
+    let belfre = &Term::Constant("Belgian and French Ale");
 
     let answer = Atom {
-        name: "Answer".to_string(),
+        name: "Answer",
         terms: vec![],
     };
     let beers = Atom {
-        name: "Beers".to_string(),
+        name: "Beers",
         terms: vec![
-            vbeer_id,
-            vbrew_id,
-            vbeer,
-            vabv,
-            vibu,
-            vounces,
-            vstyle.clone(),
-            vstyle2,
+            beer_id,
+            brew_id,
+            beer,
+            abv,
+            ibu,
+            ounces,
+            style,
+            style2,
         ],
     };
     let styles = Atom {
-        name: "Styles".to_string(),
-        terms: vec![vstyle_id, vcat_id.clone(), vstyle.clone()],
+        name: "Styles",
+        terms: vec![style_id, cat_id, style],
     };
     let categories = Atom {
-        name: "Categories".to_string(),
-        terms: vec![vcat_id.clone(), cbelfre],
+        name: "Categories",
+        terms: vec![cat_id, belfre],
     };
 
     ConjunctiveQuery {
@@ -68,36 +70,36 @@ pub fn create_example_query() -> ConjunctiveQuery {
 // book page 156: The canonical example
 // of an undirected graph that is not acyclic
 pub fn create_cyclic_example_query() -> ConjunctiveQuery {
-    let a = Term::Utf8String("a".to_string());
-    let b = Term::Utf8String("b".to_string());
-    let c = Term::Utf8String("c".to_string());
-    let d = Term::Utf8String("d".to_string());
-    let e = Term::Utf8String("e".to_string());
-    let f = Term::Utf8String("f".to_string());
+    let a = &Term::Variable("a");
+    let b = &Term::Variable("b");
+    let c = &Term::Variable("c");
+    let d = &Term::Variable("d");
+    let e = &Term::Variable("e");
+    let f = &Term::Variable("f");
 
     let cyclic_query = Atom {
-        name: "cyclic_query".to_string(),
+        name: "cyclic_query",
         terms: vec![],
     };
     let abc = Atom {
-        name: "abc".to_string(),
-        terms: vec![a, b.clone(), c.clone()],
+        name: "abc",
+        terms: vec![a, b, c],
     };
     let bef = Atom {
-        name: "bef".to_string(),
-        terms: vec![b.clone(), e.clone(), f],
+        name: "bef",
+        terms: vec![b, e, f],
     };
     let bc = Atom {
-        name: "bc".to_string(),
-        terms: vec![b, c.clone()],
+        name: "bc",
+        terms: vec![b, c],
     };
     let cd = Atom {
-        name: "cd".to_string(),
-        terms: vec![c.clone(), d],
+        name: "cd",
+        terms: vec![c, d],
     };
     let ce = Atom {
-        name: "ce".to_string(),
-        terms: vec![c.clone(), e.clone()],
+        name: "ce",
+        terms: vec![c, e],
     };
     ConjunctiveQuery {
         head_atom: cyclic_query,

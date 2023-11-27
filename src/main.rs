@@ -12,7 +12,7 @@ mod gyo;
 use gyo::acyclic_test;
 
 mod jointrees;
-use jointrees::{build_join_tree, semi_join,semi_join2};
+use jointrees::{semi_join,semi_join2,jt3,common_terms};
 
 use crate::jointrees::full_reducer;
 
@@ -23,7 +23,7 @@ fn process_file(file_path: &str, schema: Arc<Schema>) -> Result<RecordBatch, Box
 
     //Process the batch
     //Print the schema
-    println!("Schema: {:?}", batch.schema());
+    //println!("Schema: {:?}", batch.schema());
 
     /*
     // Print the data in the RecordBatch
@@ -62,12 +62,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         record_batches.push(batch);
     }
 
-    let result = semi_join2(&record_batches[0], &record_batches[1], 1, 0);
-    println!("{:?}", result);
+    //let result = semi_join2(&record_batches[0], &record_batches[1], 1, 0);
+    //println!("{:?}", result);
     //println!("{:?}", record_batches);
     // print the example query F1
     let query = create_example_query();
-    //println!("{:?}", query);
+    println!("{:?}", query);
     // Call collect_ears function
     //acyclic_test(&query);
 
@@ -75,10 +75,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     //println!("{:?}", cquery);
     //acyclic_test(&cquery);
 
-    let join_tree = build_join_tree(&query.body_atoms);
-    println!("{:?}", join_tree);
-    let reduceddb = full_reducer(&join_tree, &record_batches);
-    println!("Globally consistent: {:?}", reduceddb);
+    //let join_tree = build_join_tree(&query.body_atoms);
+    jt3(&query);
+    //let join_tree2 = jt3(&query);
+    //println!("{:?}", join_tree);
+   // println!("{:?}", join_tree2);
+    //let reduceddb = full_reducer(&join_tree, &record_batches);
+    //println!("Globally consistent: {:?}", reduceddb);
 
     Ok(())
 }

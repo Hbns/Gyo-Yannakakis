@@ -1,99 +1,72 @@
 // Join trees:
 
-use std::{collections::HashMap, error::Error, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    error::Error,
+    sync::Arc,
+};
 
 use arrow::{
-    array::{BooleanArray, ArrayRef, Array, Int64Array},
+    array::{Array, ArrayRef, BooleanArray, Int64Array},
     compute::{and, filter, kernels::cmp::eq},
     record_batch::RecordBatch,
-  
 };
 
 // Given a hypergraph H = (V,E), a tree T is a join tree of H if
 // • the nodes of T are precisely the hyperedges in E and,
 // • for each node v in V , the set of nodes of T in which v is an element
 // forms a connected subtree of T.
-use crate::queries::Atom;
+use crate::queries::{Atom, ConjunctiveQuery, Term};
 
 #[derive(Debug)]
 pub struct JoinTreeNode {
-    relation: String,
+    relation: (String),
+    common_term: Option<Vec<&'static Term>>,
     children: Vec<JoinTreeNode>,
 }
 
 impl JoinTreeNode {
-    fn new(relation: &str) -> JoinTreeNode {
+    fn new(relation: String, common_term: Option<Vec<&'static Term>>) -> JoinTreeNode {
         JoinTreeNode {
-            relation: relation.to_string(),
+            relation,
+            common_term,
             children: Vec::new(),
         }
     }
 
-    //   fn add_child(&mut self, child: JoinTreeNode) {
-    //       self.children.push(child);
-    //   }
-}
-
-pub fn build_join_tree(body_atoms: &Vec<Atom>) -> JoinTreeNode {
-    let mut root = JoinTreeNode::new(&body_atoms[0].name);
-
-    for atom in body_atoms.iter().skip(1) {
-        build_join_tree_recursive(&mut root, atom);
+    fn add_child(&mut self, child: JoinTreeNode) {
+        self.children.push(child);
     }
-
-    root
 }
 
-fn build_join_tree_recursive(parent: &mut JoinTreeNode, atom: &Atom) {
-    let mut current_index = 0;
-    let mut stack = Vec::new();
-
-    loop {
-        if !parent
-            .children
+pub fn common_terms(atom1: &Atom, atom2: &Atom) -> Option<Vec<&'static Term>> {
+    Some(
+        atom1
+            .terms
             .iter()
-            .any(|child| child.relation == atom.name)
-        {
-            let child_node = JoinTreeNode::new(&atom.name);
-            //for term in &atom.terms {
-            //     // Add any additional logic for handling terms as needed
-            // }
-            parent.children.push(child_node);
-            break;
-        }
-
-        // Find the child with the matching relation
-        let child_index = parent
-            .children
-            .iter()
-            .position(|child| child.relation == atom.name);
-
-        match child_index {
-            Some(idx) => {
-                current_index = idx;
-            }
-            None => {
-                break;
-            }
-        }
-    }
-
-    // Continue building the tree for each child
-    for _ in 1..parent.children.len() {
-        let child = &mut parent.children[current_index];
-        if child.relation == atom.name {
-            stack.push(current_index);
-        }
-    }
-
-    while let Some(idx) = stack.pop() {
-        let child = &mut parent.children[idx];
-        build_join_tree_recursive(child, atom);
-    }
+            .cloned()
+            .filter(|term1| atom2.terms.iter().any(|term2| term1 == term2))
+            .collect(),
+    )
 }
 
-// In a semi-join operation, you typically retain only the columns from the 
-// first table (the left table) in the result. The purpose of a semi-join is 
+pub fn jt3(cj: &ConjunctiveQuery) -> () {
+    let size = cj.body_atoms.len();
+    let i = 0;
+    let common = common_terms(&cj.body_atoms[0], &cj.body_atoms[1]);
+    let mut node = JoinTreeNode::new(cj.body_atoms[0].name.to_string(), common);
+    let commonB = common_terms(&cj.body_atoms[1], &cj.body_atoms[2]);
+    let mut nodeB = JoinTreeNode::new(cj.body_atoms[1].name.to_string(), commonB);
+    let commonC = common_terms(&cj.body_atoms[2], &cj.body_atoms[1]);
+    let mut nodeC = JoinTreeNode::new(cj.body_atoms[1].name.to_string(), commonC);
+    nodeB.add_child(nodeC);
+    node.add_child(nodeB);
+
+    println!("Node: {:?}", node);
+}
+
+// In a semi-join operation, you typically retain only the columns from the
+// first table (the left table) in the result. The purpose of a semi-join is
 // to filter the rows in the left table based on the existence of corresponding
 // values in the right table. Therefore, the result will include all columns
 // from the left table and none from the right table.
@@ -110,7 +83,6 @@ pub fn semi_join(
     println!("Column1 Values in Batch1: {:?}", column2_values_batch1);
     println!("Column1 Values in Batch2: {:?}", column1_values_batch2);
 
-
     // Create a boolean array based on the equality condition
     let equality_condition = eq(&column2_values_batch1, &column1_values_batch2)?;
     println!("Equality Condition: {:?}", equality_condition);
@@ -121,7 +93,6 @@ pub fn semi_join(
         .iter()
         .map(|column| filter(column, &equality_condition).unwrap())
         .collect();
-    
 
     // Create a new RecordBatch with the filtered rows for each column
     let result_batch = RecordBatch::try_new(batch1.schema().clone(), filtered_rows)?;
@@ -145,11 +116,13 @@ pub fn semi_join2(
     // Iterate over each row in the first record batch
     for i in 0..record_batch1.num_rows() {
         // Get the value of the current row in the first record batch
-        let value_to_compare = Some(column_values1
-            .as_any()
-            .downcast_ref::<Int64Array>()
-            .unwrap()
-            .value(i));
+        let value_to_compare = Some(
+            column_values1
+                .as_any()
+                .downcast_ref::<Int64Array>()
+                .unwrap()
+                .value(i),
+        );
 
         // Check if the value exists in any row of the second record batch
         let exists_in_second_batch = column_values2
@@ -177,9 +150,9 @@ pub fn semi_join2(
     // Use the BooleanArray to filter the original record batch
     //let filtered_record_batch = filter(record_batch1, &result_boolean_arra );
     //let filtered_record_batch = RecordBatch::try_new(batch1.schema().clone(), filtered_rows)?;
-     // Create a new RecordBatch with the filtered rows for each column
-     let result_batch = RecordBatch::try_new(record_batch1.schema().clone(), filtered_rows)?;
-     println!("Filtered Rows: {:?}", result_batch.num_rows());
+    // Create a new RecordBatch with the filtered rows for each column
+    let result_batch = RecordBatch::try_new(record_batch1.schema().clone(), filtered_rows)?;
+    println!("Filtered Rows: {:?}", result_batch.num_rows());
 
     Ok(result_batch)
 }
@@ -188,16 +161,16 @@ pub fn full_reducer(
     record_batches: &[RecordBatch],
 ) -> Result<RecordBatch, Box<dyn Error>> {
     // Static mapping from batch names to indices
-   // Static mapping from batch names to indices
-   let batch_name_to_index: HashMap<String, usize> = {
-    let mut map = HashMap::new();
-    map.insert("Beers.".to_string(), 0);
-    map.insert("Breweries".to_string(), 1);
-    map.insert("Categories".to_string(), 2);
-    map.insert("Locations".to_string(), 3);
-    map.insert("Styles".to_string(), 4);
-    map
-};
+    // Static mapping from batch names to indices
+    let batch_name_to_index: HashMap<String, usize> = {
+        let mut map = HashMap::new();
+        map.insert("Beers.".to_string(), 0);
+        map.insert("Breweries".to_string(), 1);
+        map.insert("Categories".to_string(), 2);
+        map.insert("Locations".to_string(), 3);
+        map.insert("Styles".to_string(), 4);
+        map
+    };
 
     // Base case: If the node has no children, return the corresponding record batch
     if join_tree.children.is_empty() {

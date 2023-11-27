@@ -40,14 +40,14 @@ pub fn acyclic_test(query: &ConjunctiveQuery) {
     }
 }
 
-fn collect_ears(query: &ConjunctiveQuery) -> Vec<Vec<Term>> {
+fn collect_ears(query: &ConjunctiveQuery) -> Vec<Vec<&Term>> {
     // Initialize a vector to store the terms vectors
-    let mut ears: Vec<Vec<Term>> = Vec::new();
+    let mut ears: Vec<Vec<&Term>> = Vec::new();
 
     // Iterate through body atoms
     for body_atom in &query.body_atoms {
         // Extract the terms vector from each body atom and add it to the ears vector
-        let terms_vector: Vec<Term> = body_atom.terms.clone();
+        let terms_vector: Vec<&Term> = body_atom.terms.clone();
         ears.push(terms_vector);
     }
 
@@ -55,16 +55,22 @@ fn collect_ears(query: &ConjunctiveQuery) -> Vec<Vec<Term>> {
     ears
 }
 
-fn remove_unique_items(vectors: &mut Vec<Vec<Term>>) {
+fn remove_unique_items(vectors: &mut Vec<Vec<&Term>>) {
     // Step 1: Create a HashSet for each vector
     let mut unique_items: Vec<HashSet<Term>> = vectors.iter().map(|_| HashSet::new()).collect();
 
     // Step 2: Iterate through all vectors to populate and update the HashSet
     for (vector_index, vector) in vectors.iter().enumerate() {
         for item in vector {
-            unique_items[vector_index].insert(item.clone());
+            // Clone the item to insert it into the HashSet
+            let cloned_item = item.clone();
+            unique_items[vector_index].insert(cloned_item.clone());
         }
     }
+
+    // Now you have unique_items populated with owned values of Term
+    // You can continue with the rest of your logic...
+
 
     // Step 3: Iterate through each vector and remove items that are unique to that vector
     for (vector_index, vector) in vectors.iter_mut().enumerate() {
@@ -79,7 +85,7 @@ fn remove_unique_items(vectors: &mut Vec<Vec<Term>>) {
     }
 }
 
-fn remove_single_item_vectors(vectors: &mut Vec<Vec<Term>>) {
+fn remove_single_item_vectors(vectors: &mut Vec<Vec<&Term>>) {
     // Step 1: Find vectors of size one
     let single_item_vectors: Vec<_> = vectors
         .iter()
