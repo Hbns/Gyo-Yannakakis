@@ -9,10 +9,10 @@ mod queries;
 use queries::{create_cyclic_example_query, create_example_query};
 
 mod gyo;
-use gyo::acyclic_test;
+use gyo::{acyclic_test,jt};
 
 mod jointrees;
-use jointrees::{semi_join,semi_join2,jt3,common_terms};
+use jointrees::{semi_join,semi_join2,common_terms, gyo_remove_unique_items};
 
 use crate::jointrees::full_reducer;
 
@@ -76,7 +76,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     //acyclic_test(&cquery);
 
     //let join_tree = build_join_tree(&query.body_atoms);
-    jt3(&query);
+    //jt(&query);
+    let mut atoms = query.body_atoms;
+    gyo_remove_unique_items(&mut atoms);
     //let join_tree2 = jt3(&query);
     //println!("{:?}", join_tree);
    // println!("{:?}", join_tree2);

@@ -21,12 +21,12 @@ use crate::queries::{Atom, ConjunctiveQuery, Term};
 #[derive(Debug)]
 pub struct JoinTreeNode {
     relation: (String),
-    common_term: Option<Vec<&'static Term>>,
+    common_term: Vec<&'static Term>,
     children: Vec<JoinTreeNode>,
 }
 
 impl JoinTreeNode {
-    fn new(relation: String, common_term: Option<Vec<&'static Term>>) -> JoinTreeNode {
+    fn new(relation: String, common_term: Vec<&'static Term>) -> JoinTreeNode {
         JoinTreeNode {
             relation,
             common_term,
@@ -39,31 +39,104 @@ impl JoinTreeNode {
     }
 }
 
-pub fn common_terms(atom1: &Atom, atom2: &Atom) -> Option<Vec<&'static Term>> {
-    Some(
-        atom1
-            .terms
-            .iter()
-            .cloned()
-            .filter(|term1| atom2.terms.iter().any(|term2| term1 == term2))
-            .collect(),
-    )
+pub fn common_terms(atom1: &Atom, atom2: &Atom) -> Vec<&'static Term> {
+    atom1
+        .terms
+        .iter()
+        .cloned()
+        .filter(|term1| atom2.terms.iter().any(|term2| term1 == term2))
+        .collect()
 }
 
-pub fn jt3(cj: &ConjunctiveQuery) -> () {
-    let size = cj.body_atoms.len();
-    let i = 0;
-    let common = common_terms(&cj.body_atoms[0], &cj.body_atoms[1]);
-    let mut node = JoinTreeNode::new(cj.body_atoms[0].name.to_string(), common);
-    let commonB = common_terms(&cj.body_atoms[1], &cj.body_atoms[2]);
-    let mut nodeB = JoinTreeNode::new(cj.body_atoms[1].name.to_string(), commonB);
-    let commonC = common_terms(&cj.body_atoms[2], &cj.body_atoms[1]);
-    let mut nodeC = JoinTreeNode::new(cj.body_atoms[1].name.to_string(), commonC);
-    nodeB.add_child(nodeC);
-    node.add_child(nodeB);
-
-    println!("Node: {:?}", node);
+fn build_jtnode(name: String, common: Vec<&'static Term>) -> JoinTreeNode {
+    JoinTreeNode::new(name, common)
 }
+
+pub fn remove_first_atom(cj: &mut ConjunctiveQuery) {
+    if !cj.body_atoms.is_empty() {
+        cj.body_atoms.remove(0);
+    }
+    cj;
+}
+
+pub fn gyo_remove_unique_items(vectors: &mut Vec<Atom>) {
+    // Step 1: Create a HashSet for each vector
+    let mut unique_items: Vec<HashSet<&Term>> = vectors.iter().map(|atom| HashSet::new()).collect();
+
+    // Step 2: Create a HashMap to store the mapping between unique items and atom names
+    let mut item_to_atom_name: HashMap<&Term, &'static str> = HashMap::new();
+
+    // Step 3: Iterate through all vectors to populate and update the HashSet and HashMap
+    for (atom_index, atom) in vectors.iter().enumerate() {
+        for term in &atom.terms {
+            // Clone the term to insert it into the HashSet
+            let cloned_term = term.clone();
+            unique_items[atom_index].insert(cloned_term);
+
+            // Update the HashMap with the mapping between the term and atom name
+            item_to_atom_name.insert(cloned_term, atom.name);
+        }
+    }
+
+    // Now you have unique_items populated with references to Term
+    // You can continue with the rest of your logic...
+
+    // Step 4: Iterate through each vector and remove items that are unique to that vector
+    for (atom_index, atom) in vectors.iter_mut().enumerate() {
+        atom.terms.retain(|term| {
+            unique_items
+                .iter()
+                .enumerate()
+                .filter(|&(i, set)| i != atom_index && set.contains(term))
+                .count()
+                > 0
+        });
+    }
+
+    // Step 5: Now you can access the atom names corresponding to each unique item
+    // Step 5: Now you can access the atom names corresponding to each non-unique item
+    for atom in vectors.iter() {
+        for term in &atom.terms {
+            if let Some(atom_name) = item_to_atom_name.get(term) {
+                println!("Term: {:?}, Atom Name: {}", term, atom_name);
+            }
+        }
+    }
+}
+
+/*
+pub fn jt3(cj: &ConjunctiveQuery) -> JoinTreeNode {
+    let mut node = build_jtnode(cj.body_atoms[0].name.to_string(), Vec::new());
+    let mut i = 0;
+
+    while cj.body_atoms.len() > 0{
+        let current_atom = &cj.body_atoms[i];
+        let next_atom = &cj.body_atoms[i + 1];
+
+        let common = common_terms(current_atom, next_atom);
+
+        if !common.is_empty() {
+            node = build_jtnode(cj.body_atoms[i].name.to_string(), common);
+
+            jt3(remove_first_atom(cj));
+            //build_jtnode(current_atom.name.to_string(), common);
+        }else{
+            jt3;
+        }
+    };
+    node
+
+ //   let common = common_terms(&cj.body_atoms[0], &cj.body_atoms[1]);
+ //   let mut node = build_jtnode(cj.body_atoms[0].name.to_string(), common);
+ //   let commonB = common_terms(&cj.body_atoms[1], &cj.body_atoms[2]);
+  //  let mut nodeB = JoinTreeNode::new(cj.body_atoms[1].name.to_string(), commonB);
+  //  let commonC = common_terms(&cj.body_atoms[2], &cj.body_atoms[1]);
+ //   let mut nodeC = JoinTreeNode::new(cj.body_atoms[2].name.to_string(), commonC);
+  //  nodeB.add_child(nodeC);
+  //  node.add_child(nodeB);
+
+ //   println!("Node: {:?}", node);
+}*/
 
 // In a semi-join operation, you typically retain only the columns from the
 // first table (the left table) in the result. The purpose of a semi-join is
