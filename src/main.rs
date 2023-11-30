@@ -12,7 +12,7 @@ mod gyo;
 use gyo::{acyclic_test,jt};
 
 mod jointrees;
-use jointrees::{semi_join,semi_join2,common_terms, gyo_remove_unique_items};
+use jointrees::{semi_join,semi_join2,common_terms, gyo_remove_unique_items,jt7};
 
 use crate::jointrees::full_reducer;
 
@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     //println!("{:?}", record_batches);
     // print the example query F1
     let query = create_example_query();
-    println!("{:?}", query);
+    //println!("{:?}", query);
     // Call collect_ears function
     //acyclic_test(&query);
 
@@ -77,8 +77,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     //let join_tree = build_join_tree(&query.body_atoms);
     //jt(&query);
-    let mut atoms = query.body_atoms;
-    gyo_remove_unique_items(&mut atoms);
+    jt7(&query.body_atoms);
+    //let mut atoms = query.body_atoms;
+    //gyo_remove_unique_items(&mut atoms);
     //let join_tree2 = jt3(&query);
     //println!("{:?}", join_tree);
    // println!("{:?}", join_tree2);
