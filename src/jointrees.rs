@@ -58,14 +58,27 @@ pub fn remove_first_atom(cj: &mut ConjunctiveQuery) {
     }
     cj;
 }
-fn buildjt (nodes: Vec<JoinTreeNode>){
-    let mut node = nodes[0].clone();
-    let mut node2 = nodes[1].clone();
-
-    node.add_child(node2);
-    println!("nodetree: {:?}", node);
-  
-    
+fn buildjt(nodes: Vec<JoinTreeNode>) {
+    let mut thisnodes = nodes.clone();
+    if let Some(thisnode) = thisnodes.pop() {
+        println!("thisnodes: {:?}", thisnodes);
+        println!("thisnode: {:?}", thisnode);
+        for common in &thisnode.common_term[..] {
+            println!("thisnode_common: {:?}", common);
+            for node in &thisnodes[..] {
+                println!("thisnodes_common: {:?}", node.common_term);
+                if node.common_term.contains(common) {
+                    println!("contains: {:?}", common);
+                }else{
+                    println!("does not contain: {:?}", common);
+                }
+                
+            }
+            buildjt(thisnodes.clone());
+        }
+    } else {
+        println!("stopcondition met");
+    }
 }
 fn build_tree(nodes: &mut Vec<JoinTreeNode>) {
     if let Some(mut current_node) = nodes.pop() {
@@ -77,14 +90,13 @@ fn build_tree(nodes: &mut Vec<JoinTreeNode>) {
                 .filter(|term| child_node.common_term.contains(term))
                 .cloned()
                 .collect();
-println!("child_node: {:?}", child_node);
-println!("-common_terms: {:?}", common_terms);
+            println!("child_node: {:?}", child_node);
+            println!("-common_terms: {:?}", common_terms);
 
             if !common_terms.is_empty() {
                 let child = child_node;
                 //current_node.add_child(child);
                 //build_tree(&mut current_node.children);
-                
             }
         }
 
@@ -92,13 +104,12 @@ println!("-common_terms: {:?}", common_terms);
     }
 }
 
-pub fn jt7(atoms: &Vec<Atom>){
+pub fn jt7(atoms: &Vec<Atom>) {
     let mut term_set: HashMap<&'static str, HashSet<&Term>> = HashMap::new();
-    println!("atoms: {:?}", atoms);
+    //println!("atoms: {:?}", atoms);
     //BTreeMap keeps order when inserting, hasMap does not but is cheaper (use large data)
     for atom in atoms {
         term_set.insert(atom.name, atom.terms.clone().into_iter().collect());
-
     }
     println!("term_set: {:?}", term_set);
     // Remove items that are unique to each set
@@ -113,27 +124,27 @@ pub fn jt7(atoms: &Vec<Atom>){
         let set = term_set.get_mut(&set_name).unwrap();
         set.retain(|item| intersection.contains(item));
     }
-    println!("term_set: {:?}", term_set);
+    //println!("term_set: {:?}", term_set);
 
     // Build the join tree
     let mut join_tree_nodes: Vec<JoinTreeNode> = Vec::new();
 
     for (index, (current_relation, current_terms)) in term_set.iter().enumerate() {
-        let mut current_node = JoinTreeNode::
-        new(current_relation.to_string(), current_terms.iter().cloned().collect());
+        let mut current_node = JoinTreeNode::new(
+            current_relation.to_string(),
+            current_terms.iter().cloned().collect(),
+        );
         join_tree_nodes.insert(index, current_node);
-    } 
+    }
 
-    println!("join_tree_nodes: {:?}", join_tree_nodes);
-    for node in &join_tree_nodes[0..2]{ // using a slice to not move the vector
-        println!("node: {:?}", node); 
+    //println!("join_tree_nodes: {:?}", join_tree_nodes);
+    for node in &join_tree_nodes[0..2] { // using a slice to not move the vector
+         //println!("node: {:?}", node);
     }
     buildjt(join_tree_nodes);
-      
-    //println!("build_tree: {:?}", join_tree_nodes); 
+
+    //println!("build_tree: {:?}", join_tree_nodes);
 }
-
-
 
 pub fn gyo_remove_unique_items(vectors: &mut Vec<Atom>) {
     // Step 1: Create a HashSet for each vector
@@ -141,7 +152,6 @@ pub fn gyo_remove_unique_items(vectors: &mut Vec<Atom>) {
 
     // Step 2: Create a HashMap to store the mapping between unique items and atom names
     let mut item_to_atom_name: HashMap<&Term, &'static str> = HashMap::new();
-    
 
     // Step 3: Iterate through all vectors to populate and update the HashSet and HashMap
     for (atom_index, atom) in vectors.iter().enumerate() {
