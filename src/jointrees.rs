@@ -18,7 +18,7 @@ use arrow::{
 // forms a connected subtree of T.
 use crate::queries::{Atom, ConjunctiveQuery, Term};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct JoinTreeNode {
     relation: String,
     common_term: Vec<&'static Term>,
@@ -59,27 +59,150 @@ pub fn remove_first_atom(cj: &mut ConjunctiveQuery) {
     cj;
 }
 fn buildjt(nodes: Vec<JoinTreeNode>) {
+    println!("nodes: {:?}", nodes);
     let mut thisnodes = nodes.clone();
     if let Some(thisnode) = thisnodes.pop() {
         println!("thisnodes: {:?}", thisnodes);
         println!("thisnode: {:?}", thisnode);
+        let mut lnode = thisnode.clone();
         for common in &thisnode.common_term[..] {
             println!("thisnode_common: {:?}", common);
+            let mut remaining_nodes = Vec::new();
+
+            
             for node in &thisnodes[..] {
                 println!("thisnodes_common: {:?}", node.common_term);
                 if node.common_term.contains(common) {
-                    println!("contains: {:?}", common);
-                }else{
-                    println!("does not contain: {:?}", common);
+                    println!("node in thisnodes contains: {:?}", common);
+                    lnode.add_child(node.clone());
+                    //thisnodes.clone().push(lnode.clone());
+                    println!("linked: {:?}", lnode);
+                } else {
+                    println!("node in thisnodes does not contain: {:?}", common);
+                    remaining_nodes.push(node.clone());
                 }
-                
             }
-            buildjt(thisnodes.clone());
+            buildjt(remaining_nodes);
         }
+        
     } else {
         println!("stopcondition met");
+        
     }
 }
+
+fn buildjt2(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
+    let mut thisnodes = nodes.clone();
+
+    if let Some(thisnode) = thisnodes.pop() {
+        let mut lnode = thisnode.clone();
+
+        let mut remaining_nodes = Vec::new();
+        let mut nodes_to_remove = Vec::new();
+       //let mut check_child_nodes = Vec::new();
+
+        for node in &thisnodes {
+            let mut common_found = false;
+
+            // Check all common terms with the current thisnode
+            for common in &thisnode.common_term {
+                if node.common_term.contains(common) {
+                    common_found = true;
+                    break;
+                }
+            }
+
+            if common_found {
+                 lnode.add_child(node.clone());
+                 nodes_to_remove.push(node.clone());
+                           
+            } else {
+                remaining_nodes.push(node.clone());
+            }
+        }
+        
+        // verify each child with remaingin nodes.
+
+        for child in &mut lnode.children{
+            
+            // remove the nodes that are childs now.
+            thisnodes.retain(|n| !nodes_to_remove.contains(n));
+            println!("retained_nodes: {:?}", thisnodes);
+            
+            let mut child_clone = child.clone();
+
+            for node in &thisnodes {
+                let mut common_found = false;
+        
+                // Check all common terms with the child
+                for common in &child_clone.common_term {
+                    if node.common_term.contains(common) {
+                        common_found = true;
+                        break;
+                    }
+                }
+        
+                if common_found {
+                    // Add the node from thisnodes as a child of the current child
+                    child_clone.add_child(node.clone());
+                }
+            }
+            *child = child_clone;
+        }
+        
+        // Remove the nodes that are now children from thisnodes
+       // thisnodes.retain(|n| !nodes_to_remove.contains(n));
+            
+        
+
+        Some(lnode)
+    } else {
+        None
+    }
+}
+fn buildjt3(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
+    fn build_recursive(thisnode: JoinTreeNode, thisnodes: Vec<JoinTreeNode>) -> JoinTreeNode {
+        let mut lnode = thisnode.clone();
+        let mut nodes_to_remove = Vec::new();
+
+        for node in &thisnodes {
+            let mut common_found = false;
+
+            // Check all common terms with the current thisnode
+            for common in &thisnode.common_term {
+                if node.common_term.contains(common) {
+                    common_found = true;
+                    break;
+                }
+            }
+
+            if common_found {
+                lnode.add_child(node.clone());
+                nodes_to_remove.push(node.clone());
+            }
+        }
+
+        // Remove the nodes that are now children from thisnodes
+        let mut remaining_nodes: Vec<JoinTreeNode> = thisnodes.into_iter().filter(|n| !nodes_to_remove.contains(n)).collect();
+
+        // Recursively build children for each child
+        for child in &mut lnode.children {
+            *child = build_recursive(child.clone(), remaining_nodes.clone());
+        }
+
+        lnode
+    }
+
+    if let Some(thisnode) = nodes.last().cloned() {
+        Some(build_recursive(thisnode, nodes))
+    } else {
+        None
+    }
+}
+
+
+
+
 fn build_tree(nodes: &mut Vec<JoinTreeNode>) {
     if let Some(mut current_node) = nodes.pop() {
         println!("current_node: {:?}", current_node);
@@ -141,9 +264,10 @@ pub fn jt7(atoms: &Vec<Atom>) {
     for node in &join_tree_nodes[0..2] { // using a slice to not move the vector
          //println!("node: {:?}", node);
     }
-    buildjt(join_tree_nodes);
-
-    //println!("build_tree: {:?}", join_tree_nodes);
+    let jt = buildjt2(join_tree_nodes.clone());
+    let jtr = buildjt3(join_tree_nodes);
+    println!("jt: {:?}", jt);
+    println!("jtR: {:?}", jtr);
 }
 
 pub fn gyo_remove_unique_items(vectors: &mut Vec<Atom>) {
