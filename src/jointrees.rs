@@ -1,7 +1,7 @@
 // Join trees:
 
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{HashMap, HashSet, VecDeque},
     error::Error,
     sync::Arc,
 };
@@ -48,50 +48,7 @@ pub fn common_terms(atom1: &Atom, atom2: &Atom) -> Vec<&'static Term> {
         .collect()
 }
 
-fn build_jtnode(name: String, common: Vec<&'static Term>) -> JoinTreeNode {
-    JoinTreeNode::new(name, common)
-}
-
-pub fn remove_first_atom(cj: &mut ConjunctiveQuery) {
-    if !cj.body_atoms.is_empty() {
-        cj.body_atoms.remove(0);
-    }
-    cj;
-}
-fn buildjt(nodes: Vec<JoinTreeNode>) {
-    println!("nodes: {:?}", nodes);
-    let mut thisnodes = nodes.clone();
-    if let Some(thisnode) = thisnodes.pop() {
-        println!("thisnodes: {:?}", thisnodes);
-        println!("thisnode: {:?}", thisnode);
-        let mut lnode = thisnode.clone();
-        for common in &thisnode.common_term[..] {
-            println!("thisnode_common: {:?}", common);
-            let mut remaining_nodes = Vec::new();
-
-            
-            for node in &thisnodes[..] {
-                println!("thisnodes_common: {:?}", node.common_term);
-                if node.common_term.contains(common) {
-                    println!("node in thisnodes contains: {:?}", common);
-                    lnode.add_child(node.clone());
-                    //thisnodes.clone().push(lnode.clone());
-                    println!("linked: {:?}", lnode);
-                } else {
-                    println!("node in thisnodes does not contain: {:?}", common);
-                    remaining_nodes.push(node.clone());
-                }
-            }
-            buildjt(remaining_nodes);
-        }
-        
-    } else {
-        println!("stopcondition met");
-        
-    }
-}
-
-fn buildjt2(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
+fn build_three(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
     let mut thisnodes = nodes.clone();
 
     if let Some(thisnode) = thisnodes.pop() {
@@ -99,7 +56,7 @@ fn buildjt2(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
 
         let mut remaining_nodes = Vec::new();
         let mut nodes_to_remove = Vec::new();
-       //let mut check_child_nodes = Vec::new();
+        //let mut check_child_nodes = Vec::new();
 
         for node in &thisnodes {
             let mut common_found = false;
@@ -113,27 +70,24 @@ fn buildjt2(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
             }
 
             if common_found {
-                 lnode.add_child(node.clone());
-                 nodes_to_remove.push(node.clone());
-                           
+                lnode.add_child(node.clone());
+                nodes_to_remove.push(node.clone());
             } else {
                 remaining_nodes.push(node.clone());
             }
         }
-        
+
         // verify each child with remaingin nodes.
 
-        for child in &mut lnode.children{
-            
+        for child in &mut lnode.children {
             // remove the nodes that are childs now.
             thisnodes.retain(|n| !nodes_to_remove.contains(n));
-            println!("retained_nodes: {:?}", thisnodes);
             
             let mut child_clone = child.clone();
 
             for node in &thisnodes {
                 let mut common_found = false;
-        
+
                 // Check all common terms with the child
                 for common in &child_clone.common_term {
                     if node.common_term.contains(common) {
@@ -141,7 +95,7 @@ fn buildjt2(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
                         break;
                     }
                 }
-        
+
                 if common_found {
                     // Add the node from thisnodes as a child of the current child
                     child_clone.add_child(node.clone());
@@ -149,25 +103,24 @@ fn buildjt2(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
             }
             *child = child_clone;
         }
-        
+
         // Remove the nodes that are now children from thisnodes
-       // thisnodes.retain(|n| !nodes_to_remove.contains(n));
-            
-        
+        // thisnodes.retain(|n| !nodes_to_remove.contains(n));
 
         Some(lnode)
     } else {
         None
     }
 }
+//recursive version, not workin corrdctly
 fn buildjt3(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
     fn build_recursive(thisnode: JoinTreeNode, thisnodes: Vec<JoinTreeNode>) -> JoinTreeNode {
         let mut lnode = thisnode.clone();
         let mut nodes_to_remove = Vec::new();
-    
+
         for node in &thisnodes {
             let mut common_found = false;
-    
+
             // Check all common terms with the current thisnode
             for common in &thisnode.common_term {
                 if node.common_term.contains(common) {
@@ -175,21 +128,24 @@ fn buildjt3(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
                     break;
                 }
             }
-    
+
             if common_found {
                 lnode.add_child(node.clone());
                 nodes_to_remove.push(node.clone());
             }
         }
-    
+
         // Remove the nodes that are now children from thisnodes
-        let mut remaining_nodes: Vec<JoinTreeNode> = thisnodes.into_iter().filter(|n| !nodes_to_remove.contains(n)).collect();
-    
+        let mut remaining_nodes: Vec<JoinTreeNode> = thisnodes
+            .into_iter()
+            .filter(|n| !nodes_to_remove.contains(n))
+            .collect();
+
         // Recursively build children for each child
         for child in &mut lnode.children {
             *child = build_recursive(child.clone(), remaining_nodes.clone()); // Use a new clone for each recursive call
         }
-    
+
         lnode
     }
 
@@ -200,34 +156,7 @@ fn buildjt3(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
     }
 }
 
-
-
-
-fn build_tree(nodes: &mut Vec<JoinTreeNode>) {
-    if let Some(mut current_node) = nodes.pop() {
-        println!("current_node: {:?}", current_node);
-        for child_node in nodes.iter_mut() {
-            let common_terms: Vec<_> = current_node
-                .common_term
-                .iter()
-                .filter(|term| child_node.common_term.contains(term))
-                .cloned()
-                .collect();
-            println!("child_node: {:?}", child_node);
-            println!("-common_terms: {:?}", common_terms);
-
-            if !common_terms.is_empty() {
-                let child = child_node;
-                //current_node.add_child(child);
-                //build_tree(&mut current_node.children);
-            }
-        }
-
-        build_tree(nodes);
-    }
-}
-
-pub fn jt7(atoms: &Vec<Atom>) {
+pub fn join_tree(atoms: &Vec<Atom>)-> Vec<Vec<String>> {
     let mut term_set: HashMap<&'static str, HashSet<&Term>> = HashMap::new();
     //println!("atoms: {:?}", atoms);
     //BTreeMap keeps order when inserting, hasMap does not but is cheaper (use large data)
@@ -264,10 +193,12 @@ pub fn jt7(atoms: &Vec<Atom>) {
     for node in &join_tree_nodes[0..2] { // using a slice to not move the vector
          //println!("node: {:?}", node);
     }
-    let jt = buildjt2(join_tree_nodes.clone());
-    let jtr = buildjt3(join_tree_nodes);
-    println!("jt2: {:?}", jt);
-    println!("jt3: {:?}", jtr);
+    let jt = build_three(join_tree_nodes.clone());
+    let mut sji = post_order_traversal(&jt.unwrap(), None);
+    sji.pop();
+    //println!("sji: {:?}", sji);
+    sji
+
 }
 
 pub fn gyo_remove_unique_items(vectors: &mut Vec<Atom>) {
@@ -314,40 +245,6 @@ pub fn gyo_remove_unique_items(vectors: &mut Vec<Atom>) {
         }
     }
 }
-
-/*
-pub fn jt3(cj: &ConjunctiveQuery) -> JoinTreeNode {
-    let mut node = build_jtnode(cj.body_atoms[0].name.to_string(), Vec::new());
-    let mut i = 0;
-
-    while cj.body_atoms.len() > 0{
-        let current_atom = &cj.body_atoms[i];
-        let next_atom = &cj.body_atoms[i + 1];
-
-        let common = common_terms(current_atom, next_atom);
-
-        if !common.is_empty() {
-            node = build_jtnode(cj.body_atoms[i].name.to_string(), common);
-
-            jt3(remove_first_atom(cj));
-            //build_jtnode(current_atom.name.to_string(), common);
-        }else{
-            jt3;
-        }
-    };
-    node
-
- //   let common = common_terms(&cj.body_atoms[0], &cj.body_atoms[1]);
- //   let mut node = build_jtnode(cj.body_atoms[0].name.to_string(), common);
- //   let commonB = common_terms(&cj.body_atoms[1], &cj.body_atoms[2]);
-  //  let mut nodeB = JoinTreeNode::new(cj.body_atoms[1].name.to_string(), commonB);
-  //  let commonC = common_terms(&cj.body_atoms[2], &cj.body_atoms[1]);
- //   let mut nodeC = JoinTreeNode::new(cj.body_atoms[2].name.to_string(), commonC);
-  //  nodeB.add_child(nodeC);
-  //  node.add_child(nodeB);
-
- //   println!("Node: {:?}", node);
-}*/
 
 // In a semi-join operation, you typically retain only the columns from the
 // first table (the left table) in the result. The purpose of a semi-join is
@@ -440,6 +337,39 @@ pub fn semi_join2(
 
     Ok(result_batch)
 }
+
+// Go trough the JoinTreeNode and extract information for the semijoin.
+fn post_order_traversal(node: &JoinTreeNode, parent: Option<&JoinTreeNode>)-> Vec<Vec<String>> {
+    // the vectors to return to semijoin.
+    let mut result = Vec::new();
+    // dive in the three.
+    for child in &node.children {
+        result.extend_from_slice(&post_order_traversal(child, Some(node)));
+    }
+    // Procces the nodes.
+    let mut current_node = node.clone();
+    let mut current_parent = parent.unwrap_or(node).clone();
+    current_node.children.clear();
+    current_parent.children.clear();
+        // Find the common common_term.
+    let p_set: HashSet<_> = current_parent.common_term.into_iter().collect();
+    let n_set: HashSet<_> = current_node.common_term.into_iter().collect();
+    let common_term: HashSet<_> = p_set.intersection(&n_set).cloned().collect();
+    // get the string of the common term.
+    let common = if let Some(Term::Variable(value)) = common_term.iter().next(){
+        value
+    }else{
+        "default_value"
+    };
+    // make the vector for semijoin: relation1, relation2, common_term.
+    let semi_join_info = vec![ current_parent.relation, current_node.relation, common.to_string()];
+    
+    result.push(semi_join_info);
+
+    result
+    
+}
+
 pub fn full_reducer(
     join_tree: &JoinTreeNode,
     record_batches: &[RecordBatch],
@@ -474,4 +404,34 @@ pub fn full_reducer(
     }
 
     Ok(result)
+}
+
+pub fn reduce(infos: &Vec<Vec<String>>, data: &HashMap<&str, RecordBatch>){
+
+    for info in infos{
+        let key1 = info[0].as_str();
+        let key2 = &info[1].as_str();
+        let column = &info[2];
+
+        let b1 = data.get(key1);
+        let b2 = data.get(key2);
+
+        let i1 = b1.unwrap().schema().index_of(column);
+        let i2 = b2.unwrap().schema().index_of(column);
+
+        println!("index1 {:?}", i1);
+        println!("index2 {:?}", i2);
+       
+    }
+ /*  
+  if let Some(record_batch) = data.get("Styles") {
+    println!("RecordBatch found for key '{}': {:?}", "Styles", record_batch);
+    let idx= record_batch.schema().index_of("cat_id");
+    println!("index for cat_id: {:?}", idx);
+
+} else {
+    println!("No RecordBatch found for key '{}'", "Styles");
+}
+*/   
+    
 }

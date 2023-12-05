@@ -1,6 +1,7 @@
 use arrow::csv::{self, ReaderBuilder};
 use arrow::datatypes::Schema;
 use arrow::record_batch::RecordBatch;
+use std::collections::HashMap;
 use std::error::Error;
 use std::fs::File;
 use std::sync::Arc;
@@ -12,7 +13,7 @@ mod gyo;
 use gyo::{acyclic_test,jt};
 
 mod jointrees;
-use jointrees::{semi_join,semi_join2,common_terms, gyo_remove_unique_items,jt7};
+use jointrees::{semi_join,semi_join2,common_terms, gyo_remove_unique_items, join_tree, reduce};
 
 use crate::jointrees::full_reducer;
 
@@ -45,8 +46,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let locations = "./data/locations.csv";
     let styles = "./data/styles.csv";
     let data = vec![beers, breweries, categories, locations, styles];
-    let mut record_batches: Vec<RecordBatch> = Vec::new();
-
+    let keys = vec!["Beers", "Breweries", "Categories", "Locations", "Styles"];
+ /*   
     for file_path in data {
         let schema = match csv::infer_schema_from_files(&[file_path.to_string()], b',', None, true)
         {
@@ -61,8 +62,27 @@ fn main() -> Result<(), Box<dyn Error>> {
         let batch = process_file(file_path, Arc::new(schema))?;
         record_batches.push(batch);
     }
+*/
+    // Create a HashMap to store RecordBatches with keys
+    let mut record_batch_map: HashMap<&str, RecordBatch> = HashMap::new();
 
-    //let result = semi_join2(&record_batches[0], &record_batches[1], 1, 0);
+    for (file_path, key) in data.iter().zip(keys.iter()) {
+        let schema = match csv::infer_schema_from_files(&[file_path.to_string()], b',', None, true) {
+            Ok(schema) => schema,
+            Err(error) => {
+                eprintln!("An error occurred: {:?}", error);
+                Schema::empty()
+            }
+        };
+
+        // Call process_file and store the returned RecordBatch in the HashMap with the key
+        let batch = process_file(file_path, Arc::new(schema))?;
+        record_batch_map.insert(key, batch);
+    }
+
+    //println!("recb: {:?}", record_batch_map);
+
+  //  let result = semi_join2(&record_batches[0], &record_batches[1], 1, 0);
     //println!("{:?}", result);
     //println!("{:?}", record_batches);
     // print the example query F1
@@ -77,7 +97,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     //let join_tree = build_join_tree(&query.body_atoms);
     //jt(&query);
-    jt7(&query.body_atoms);
+    let semi_join_info = join_tree(&query.body_atoms);
+    //println!("semi_join_info: {:?}", semi_join_info);
+
+   reduce(&semi_join_info,  &record_batch_map);
     //let mut atoms = query.body_atoms;
     //gyo_remove_unique_items(&mut atoms);
     //let join_tree2 = jt3(&query);
