@@ -40,16 +40,6 @@ pub fn acyclic_test(query: &ConjunctiveQuery) {
     }
 }
 
-pub fn jt(query: &ConjunctiveQuery){
-    let mut ears = collect_ears(&query);
-
-    // Perform GYO:
-
-    // Delete all vertex that appears in at most one hyperedge.
-    remove_unique_items(&mut ears);
-    println!("unique_removed: {:?}", ears)
-}
-
 fn collect_ears(query: &ConjunctiveQuery) -> Vec<Vec<&Term>> {
     // Initialize a vector to store the terms vectors
     let mut ears: Vec<Vec<&Term>> = Vec::new();
