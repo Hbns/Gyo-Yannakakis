@@ -7,8 +7,10 @@ use std::{
 };
 
 use arrow::{
-    array::{Array, ArrayRef, BooleanArray, Int64Array},
+    array::{new_empty_array, Array, ArrayRef, BooleanArray, Int64Array, StringArray},
     compute::{and, filter, kernels::cmp::eq},
+    datatypes::DataType,
+    ipc::Utf8,
     record_batch::RecordBatch,
 };
 
@@ -82,7 +84,7 @@ fn build_three(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
         for child in &mut lnode.children {
             // remove the nodes that are childs now.
             thisnodes.retain(|n| !nodes_to_remove.contains(n));
-            
+
             let mut child_clone = child.clone();
 
             for node in &thisnodes {
@@ -156,7 +158,7 @@ fn buildjt3(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
     }
 }
 
-pub fn join_tree(atoms: &Vec<Atom>)-> Vec<Vec<String>> {
+pub fn join_tree(atoms: &Vec<Atom>) -> Vec<Vec<String>> {
     let mut term_set: HashMap<&'static str, HashSet<&Term>> = HashMap::new();
     //println!("atoms: {:?}", atoms);
     //BTreeMap keeps order when inserting, hasMap does not but is cheaper (use large data)
@@ -198,7 +200,6 @@ pub fn join_tree(atoms: &Vec<Atom>)-> Vec<Vec<String>> {
     sji.pop();
     //println!("sji: {:?}", sji);
     sji
-
 }
 
 pub fn gyo_remove_unique_items(vectors: &mut Vec<Atom>) {
@@ -339,7 +340,7 @@ pub fn semi_join2(
 }
 
 // Go trough the JoinTreeNode and extract information for the semijoin.
-fn post_order_traversal(node: &JoinTreeNode, parent: Option<&JoinTreeNode>)-> Vec<Vec<String>> {
+fn post_order_traversal(node: &JoinTreeNode, parent: Option<&JoinTreeNode>) -> Vec<Vec<String>> {
     // the vectors to return to semijoin.
     let mut result = Vec::new();
     // dive in the three.
@@ -351,23 +352,63 @@ fn post_order_traversal(node: &JoinTreeNode, parent: Option<&JoinTreeNode>)-> Ve
     let mut current_parent = parent.unwrap_or(node).clone();
     current_node.children.clear();
     current_parent.children.clear();
-        // Find the common common_term.
+    // Find the common common_term.
     let p_set: HashSet<_> = current_parent.common_term.into_iter().collect();
     let n_set: HashSet<_> = current_node.common_term.into_iter().collect();
     let common_term: HashSet<_> = p_set.intersection(&n_set).cloned().collect();
     // get the string of the common term.
-    let common = if let Some(Term::Variable(value)) = common_term.iter().next(){
+    let common = if let Some(Term::Variable(value)) = common_term.iter().next() {
         value
-    }else{
+    } else {
         "default_value"
     };
     // make the vector for semijoin: relation1, relation2, common_term.
-    let semi_join_info = vec![ current_parent.relation, current_node.relation, common.to_string()];
-    
+    let semi_join_info = vec![
+        current_parent.relation,
+        current_node.relation,
+        common.to_string(),
+    ];
+
     result.push(semi_join_info);
 
     result
-    
+}
+
+// make boolean array to filter realtion1 in semijoin.
+fn make_boolean_array(
+    relation1: &RecordBatch,
+    column_index_r1: usize,
+    relation2: &RecordBatch,
+    column_index_r2: usize,
+) -> BooleanArray {
+    // Extract the columns from the RecordBatches
+    let col_r1 = relation1.column(column_index_r1);
+    let col_r2 = relation2.column(column_index_r2);
+    // request the datatype of the column(s)
+    let data_type = col_r1.data_type();
+
+    // Create a boolean array to represent the result of the semi-join
+    let mut result = vec![false; relation1.num_rows()];
+
+    if data_type == &DataType::Utf8 {
+        // get the values in the column
+        let values_r1 = col_r1.as_any().downcast_ref::<StringArray>().unwrap();
+        let values_r2 = col_r2.as_any().downcast_ref::<StringArray>().unwrap();
+        // Populate the boolean array based on the semi-join condition
+        for (i, value_r1) in values_r1.iter().enumerate() {
+            result[i] = values_r2.iter().any(|value_r2| value_r1 == value_r2);
+        }
+    } else {
+        // get the values in the column
+        let values_r1 = col_r1.as_any().downcast_ref::<Int64Array>().unwrap();
+        let values_r2 = col_r2.as_any().downcast_ref::<Int64Array>().unwrap();
+        // Populate the boolean array based on the semi-join condition
+        for (i, value_r1) in values_r1.iter().enumerate() {
+            result[i] = values_r2.iter().any(|value_r2| value_r1 == value_r2);
+        }
+    }
+
+    BooleanArray::from(result)
 }
 
 pub fn full_reducer(
@@ -406,32 +447,34 @@ pub fn full_reducer(
     Ok(result)
 }
 
-pub fn reduce(infos: &Vec<Vec<String>>, data: &HashMap<&str, RecordBatch>){
-
-    for info in infos{
+pub fn reduce(infos: &Vec<Vec<String>>, data: &HashMap<&str, RecordBatch>) {
+    for info in infos {
+        // distribute the info from the vector
         let key1 = info[0].as_str();
         let key2 = &info[1].as_str();
         let column = &info[2];
 
-        let b1 = data.get(key1);
-        let b2 = data.get(key2);
-
-        let i1 = b1.unwrap().schema().index_of(column);
-        let i2 = b2.unwrap().schema().index_of(column);
-
-        println!("index1 {:?}", i1);
-        println!("index2 {:?}", i2);
-       
+        // get the required recordbatches
+        let record_batch1 = data.get(key1);
+        let record_batch2 = data.get(key2);
+        // get the required column indexes
+        let column_index1 = record_batch1
+            .unwrap()
+            .schema()
+            .index_of(column)
+            .unwrap_or(42);
+        let column_index2 = record_batch2
+            .unwrap()
+            .schema()
+            .index_of(column)
+            .unwrap_or(42);
+        // make the boolean array
+        let boolen_array = make_boolean_array(
+            record_batch1.unwrap(),
+            column_index1,
+            record_batch2.unwrap(),
+            column_index2,
+        );
+        println!("#true {:?}", boolen_array.true_count());
     }
- /*  
-  if let Some(record_batch) = data.get("Styles") {
-    println!("RecordBatch found for key '{}': {:?}", "Styles", record_batch);
-    let idx= record_batch.schema().index_of("cat_id");
-    println!("index for cat_id: {:?}", idx);
-
-} else {
-    println!("No RecordBatch found for key '{}'", "Styles");
-}
-*/   
-    
 }
