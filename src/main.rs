@@ -15,6 +15,9 @@ use gyo::acyclic_test;
 mod jointrees;
 use jointrees::{join_tree, reduce};
 
+mod yannakaki;
+use yannakaki::yannakaki;
+
 fn process_file(file_path: &str, schema: Arc<Schema>) -> Result<RecordBatch, Box<dyn Error>> {
     let file = File::open(file_path)?;
     let mut csv = ReaderBuilder::new(schema).has_header(true).build(file)?;
@@ -44,10 +47,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     let locations = "./data/locations.csv";
     let styles = "./data/styles.csv";
     let data = vec![beers, breweries, categories, locations, styles];
-    let keys = vec!["Beers", "Breweries", "Categories", "Locations", "Styles"];
+    let keys = vec![
+        "Beers".to_string(),
+        "Breweries".to_string(),
+        "Categories".to_string(),
+        "Locations".to_string(),
+        "Styles".to_string(),
+    ];
 
     // Create a HashMap to store RecordBatches with keys
-    let mut record_batch_map: HashMap<&str, RecordBatch> = HashMap::new();
+    let mut record_batch_map: HashMap<String, RecordBatch> = HashMap::new();
 
     for (file_path, key) in data.iter().zip(keys.iter()) {
         let schema = match csv::infer_schema_from_files(&[file_path.to_string()], b',', None, true)
@@ -61,7 +70,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         // Call process_file and store the returned RecordBatch in the HashMap with the key
         let batch = process_file(file_path, Arc::new(schema))?;
-        record_batch_map.insert(key, batch);
+        record_batch_map.insert(key.clone(), batch);
     }
     // print the example query F1
     let query = create_example_query();
@@ -69,14 +78,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Call collect_ears function
     //acyclic_test(&query);
 
-    let cquery = create_cyclic_example_query();
+    //let cquery = create_cyclic_example_query();
     //println!("{:?}", cquery);
     //acyclic_test(&cquery);
-
-    let semi_join_info = join_tree(&query.body_atoms);
-    //println!("semi_join_info: {:?}", semi_join_info);
-
-    reduce(&semi_join_info, &record_batch_map);
+    yannakaki(&query, &mut record_batch_map);
 
     Ok(())
 }

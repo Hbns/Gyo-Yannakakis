@@ -258,6 +258,8 @@ fn make_boolean_array(
             result[i] = values_r2.iter().any(|value_r2| value_r1 == value_r2);
         }
     }
+println!("bool: {:?}", result);
+
 
     BooleanArray::from(result)
 }
@@ -274,16 +276,17 @@ fn filter_record_batch(record_batch: &RecordBatch, filter_array: &BooleanArray) 
     RecordBatch::try_new(record_batch.schema().clone(), filtered_arrays).unwrap()
 }
 
-pub fn reduce(infos: &Vec<Vec<String>>, data: &HashMap<&str, RecordBatch>) {
+pub fn reduce(infos: Vec<Vec<String>>, data: &mut HashMap<String, RecordBatch>){
+    //let infos2 = infos.clone();
     for info in infos {
         // distribute the info from the vector
-        let key1 = info[0].as_str();
-        let key2 = &info[1].as_str();
-        let column = &info[2];
+        let key1 = info[0].clone();
+        let key2 = info[1].clone();
+        let column = info[2].as_str();
 
         // get the required recordbatches
-        let record_batch1 = data.get(key1);
-        let record_batch2 = data.get(key2);
+        let record_batch1 = data.get(&key1);
+        let record_batch2 = data.get(&key2);
         // get the required column indexes
         let column_index1 = record_batch1
             .unwrap()
@@ -304,7 +307,10 @@ pub fn reduce(infos: &Vec<Vec<String>>, data: &HashMap<&str, RecordBatch>) {
         );
         println!("#true {:?}", boolean_array.true_count());
         // filter relation1
-        let filtered = filter_record_batch(record_batch1.unwrap(), &boolean_array);
+        let filtered_relation1 = filter_record_batch(record_batch1.unwrap(), &boolean_array);
+        data.insert(key1.clone(), filtered_relation1);
         //println!("filtered {:?}", filtered);
+        
+     
     }
 }
