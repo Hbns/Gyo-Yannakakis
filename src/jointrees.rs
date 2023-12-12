@@ -258,7 +258,7 @@ fn make_boolean_array(
             result[i] = values_r2.iter().any(|value_r2| value_r1 == value_r2);
         }
     }
-println!("bool: {:?}", result);
+//println!("bool: {:?}", result);
 
 
     BooleanArray::from(result)
@@ -305,7 +305,7 @@ pub fn reduce(infos: Vec<Vec<String>>, data: &mut HashMap<String, RecordBatch>){
             record_batch2.unwrap(),
             column_index2,
         );
-        println!("#true {:?}", boolean_array.true_count());
+        //println!("#true {:?}", boolean_array.true_count());
         // filter relation1
         let filtered_relation1 = filter_record_batch(record_batch1.unwrap(), &boolean_array);
         data.insert(key1.clone(), filtered_relation1);
