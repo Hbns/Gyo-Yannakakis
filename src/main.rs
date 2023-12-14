@@ -22,7 +22,7 @@ mod yannakaki;
 use yannakaki::yannakaki;
 
 mod csvout;
-use csvout::write_to_csv;
+
 
 fn process_file(file_path: &str, schema: Arc<Schema>) -> Result<RecordBatch, Box<dyn Error>> {
     let file = File::open(file_path)?;
@@ -63,7 +63,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         };
 
-        // Call process_file and store the returned RecordBatch in the HashMap with the key
+        // Call process_file and store the returned RecordBatch in the HashMap with the relation name as key
         let batch = process_file(file_path, Arc::new(schema))?;
         record_batch_map.insert(key.clone(), batch);
     }
@@ -88,7 +88,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     acyclic_test(&cquery);
      */
 
-    //yannakaki(&query, &mut record_batch_map);
+    //let infor = join_tree(&cq5.body_atoms);
+   // println!("infor: {:?}", infor);
+
+    //reduce(infor, &mut record_batch_map);
+
+    yannakaki(&cq2, &mut record_batch_map);
 
     /*
         // to be written to csv.

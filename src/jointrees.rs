@@ -7,8 +7,8 @@ use std::{
 };
 
 use arrow::{
-    array::{new_empty_array, Array, ArrayRef, BooleanArray, Int64Array, StringArray},
-    compute::{and, filter, kernels::cmp::eq},
+    array::{new_empty_array, Array, ArrayRef, BooleanArray, Int64Array, StringArray, Float64Array},
+    compute::{and, filter, kernels::cmp::eq, filter_record_batch},
     datatypes::DataType,
     ipc::Utf8,
     record_batch::RecordBatch,
@@ -89,7 +89,6 @@ fn build_tree(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
                         break;
                     }
                 }
-
                 if common_found {
                     // Add the node from thisnodes as a child of the current child
                     child_clone.add_child(node.clone());
@@ -100,12 +99,12 @@ fn build_tree(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
 
         // Remove the nodes that are now children from thisnodes
         // thisnodes.retain(|n| !nodes_to_remove.contains(n));
-
         Some(lnode)
     } else {
         None
     }
 }
+
 //recursive version, not workin corrdctly
 fn buildjt3(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
     fn build_recursive(thisnode: JoinTreeNode, thisnodes: Vec<JoinTreeNode>) -> JoinTreeNode {
@@ -182,7 +181,8 @@ pub fn join_tree(atoms: &Vec<Atom>) -> Vec<Vec<String>> {
         );
         join_tree_nodes.insert(index, current_node);
     }
-    // build the three from the nodes
+    println!("join_tree_nodes: {:?}", join_tree_nodes);
+    // build the tree from the nodes
     let join_tree = build_tree(join_tree_nodes.clone());
     // extract information from the join_three for the semijoin
     let mut semi_join_info = get_semi_join_info(&join_tree.unwrap(), None);
@@ -241,29 +241,56 @@ fn make_boolean_array(
     // Create a boolean array to represent the result of the semi-join
     let mut result = vec![false; relation1.num_rows()];
 
-    if data_type == &DataType::Utf8 {
-        // get the values in the column
-        let values_r1 = col_r1.as_any().downcast_ref::<StringArray>().unwrap();
-        let values_r2 = col_r2.as_any().downcast_ref::<StringArray>().unwrap();
-        // Populate the boolean array based on the semi-join condition
-        for (i, value_r1) in values_r1.iter().enumerate() {
-            result[i] = values_r2.iter().any(|value_r2| value_r1 == value_r2);
-        }
-    } else {
-        // get the values in the column
-        let values_r1 = col_r1.as_any().downcast_ref::<Int64Array>().unwrap();
-        let values_r2 = col_r2.as_any().downcast_ref::<Int64Array>().unwrap();
-        // Populate the boolean array based on the semi-join condition
-        for (i, value_r1) in values_r1.iter().enumerate() {
-            result[i] = values_r2.iter().any(|value_r2| value_r1 == value_r2);
+    {
+        match col_r1.data_type() {
+            &DataType::Utf8 => {
+                let values_r1 = col_r1.as_any().downcast_ref::<StringArray>().unwrap();
+                let values_r2 = col_r2.as_any().downcast_ref::<StringArray>().unwrap();
+                for (i, value_r1) in values_r1.iter().enumerate() {
+                    result[i] = values_r2.iter().any(|value_r2| value_r1 == value_r2);
+                }
+            }
+            &DataType::Int64 => {
+                let values_r1 = col_r1.as_any().downcast_ref::<Int64Array>().unwrap();
+                let values_r2 = col_r2.as_any().downcast_ref::<Int64Array>().unwrap();
+                for (i, value_r1) in values_r1.iter().enumerate() {
+                    result[i] = values_r2.iter().any(|value_r2| value_r1 == value_r2);
+                }
+            }
+            &DataType::Float64 => {
+                let values_r1 = col_r1.as_any().downcast_ref::<Float64Array>().unwrap();
+                let values_r2 = col_r2.as_any().downcast_ref::<Float64Array>().unwrap();
+                for (i, value_r1) in values_r1.iter().enumerate() {
+                    result[i] = values_r2.iter().any(|value_r2| value_r1 == value_r2);
+                }
+            }
+            _ => panic!("Unsupported data type: {:?}", col_r1.data_type()),
         }
     }
 //println!("bool: {:?}", result);
-
-
     BooleanArray::from(result)
 }
 
+// make a boolean array for value depending of the column type:
+fn make_boolean_array_string(relation: &RecordBatch, column_index: usize, value: &str) -> BooleanArray {
+    let col = relation.column(column_index).as_any().downcast_ref::<StringArray>().unwrap();
+    let result = col.iter().map(|item| item.as_deref() == Some(value)).collect::<Vec<_>>();
+    BooleanArray::from(result)
+}
+
+fn make_boolean_array_int64(relation: &RecordBatch, column_index: usize, value: i64) -> BooleanArray {
+    let col = relation.column(column_index).as_any().downcast_ref::<Int64Array>().unwrap();
+    let result = col.iter().map(|item| item == Some(value)).collect::<Vec<_>>();
+    BooleanArray::from(result)
+}
+
+pub fn make_boolean_array_float64(relation: &RecordBatch, column_index: usize, value: f64) -> BooleanArray {
+    let col = relation.column(column_index).as_any().downcast_ref::<Float64Array>().unwrap();
+    let result = col.iter().map(|item| item == Some(value)).collect::<Vec<_>>();
+    BooleanArray::from(result)
+}
+
+/*
 fn filter_record_batch(record_batch: &RecordBatch, filter_array: &BooleanArray) -> RecordBatch {
     // Use the filter function to filter the record batch based on the boolean array
     let filtered_arrays = record_batch
@@ -275,7 +302,7 @@ fn filter_record_batch(record_batch: &RecordBatch, filter_array: &BooleanArray) 
     // Create a new record batch with filtered arrays
     RecordBatch::try_new(record_batch.schema().clone(), filtered_arrays).unwrap()
 }
-
+ */
 pub fn reduce(infos: Vec<Vec<String>>, data: &mut HashMap<String, RecordBatch>){
     //let infos2 = infos.clone();
     for info in infos {
@@ -308,9 +335,8 @@ pub fn reduce(infos: Vec<Vec<String>>, data: &mut HashMap<String, RecordBatch>){
         //println!("#true {:?}", boolean_array.true_count());
         // filter relation1
         let filtered_relation1 = filter_record_batch(record_batch1.unwrap(), &boolean_array);
-        data.insert(key1.clone(), filtered_relation1);
+        data.insert(key1.clone(), filtered_relation1.unwrap());
         //println!("filtered {:?}", filtered);
-        
      
     }
 }

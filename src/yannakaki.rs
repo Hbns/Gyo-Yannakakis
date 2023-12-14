@@ -1,6 +1,13 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::File, io::BufWriter};
 
-use arrow::{array::{Datum, PrimitiveArray, Array}, datatypes::DataType, record_batch::RecordBatch};
+use arrow::{
+    array::{Array, BooleanArray, Datum, Float64Array, PrimitiveArray, StringArray},
+    compute::filter,
+    compute::filter_record_batch,
+    csv::Writer,
+    datatypes::DataType,
+    record_batch::RecordBatch,
+};
 
 /*
 Tree steps:
@@ -9,7 +16,8 @@ Tree steps:
 (this removed all dangling tuples)
 - perform the query over the reduced database */
 use crate::{
-    jointrees::{join_tree, reduce},
+    csvout::write_record_batch_to_csv,
+    jointrees::{join_tree, make_boolean_array_float64, reduce},
     queries::{Atom, ConjunctiveQuery, Term},
 };
 
@@ -33,19 +41,34 @@ fn select_rows(record_batch: &RecordBatch, atom: &Atom) -> Vec<usize> {
                 }
                 Term::Constant(value) => {
                     // Get the value from the column at the current row
-                    // Assuming 'column' is of type Arc<dyn Array>
                     is_match = true;
                     let column_data_type: &DataType = column.data_type();
 
                     match column_data_type {
                         DataType::Int64 => {
-                            let int64_column = column
+                            let int_column = column
                                 .as_any()
                                 .downcast_ref::<PrimitiveArray<arrow::datatypes::Int64Type>>()
                                 .expect("Failed to downcast to Int64Array");
 
                             // Compare the value with the constant term
-                            if int64_column.is_empty() && int64_column.value(row) != value.parse::<i64>().unwrap_or(42) {
+                            if int_column.is_empty()
+                                && int_column.value(row) != value.parse::<i64>().unwrap_or(42)
+                            {
+                                is_match = false;
+                                break;
+                            }
+                        }
+                        DataType::Float64 => {
+                            let float_column = column
+                                .as_any()
+                                .downcast_ref::<PrimitiveArray<arrow::datatypes::Float64Type>>()
+                                .expect("Failed to downcast to Float64Array");
+
+                            // Compare the value with the constant term
+                            if float_column.is_empty()
+                                && float_column.value(row) != value.parse::<f64>().unwrap_or(42.0)
+                            {
                                 is_match = false;
                                 break;
                             }
@@ -66,7 +89,6 @@ fn select_rows(record_batch: &RecordBatch, atom: &Atom) -> Vec<usize> {
                         _ => {
                             // Handle other data types
                             println!("Unhandled data type: {:?}", column_data_type);
-                            // You might want to handle this case based on your requirements
                         }
                     }
                 }
@@ -93,23 +115,38 @@ fn select_rows_from_hashmap(
 }
 
 pub fn yannakaki(query: &ConjunctiveQuery, data: &mut HashMap<String, RecordBatch>) {
+    
     println!("cq: {:?}", query);
     let mut semi_join_info = join_tree(&query.body_atoms);
-    //println!("semi_join_info: {:?}", semi_join_info);
+    println!("semi_join_info: {:?}", semi_join_info);
     // semijoin bottem to top
     reduce(semi_join_info.clone(), data);
     semi_join_info.reverse();
     // semijoin top to bottom
     //println!("reversed semi_join_info: {:?}", semi_join_info);
     reduce(semi_join_info, data);
-
+    
+    //println!("Query: {:?}", query);
     // do the query
     //empty head -> is there at least one tuple in the database that works for this cq? ture or false
     let a = query.body_atoms[0].clone();
     let r = select_rows_from_hashmap(data, &a);
-    println!("Atom: {:?}, valid rows {:?}", a.name ,r);
+    // println!("Atom: {:?}, valid rows {:?}", a.name, r);
     let d = data.get(a.name).unwrap();
-    println!("column_length: {:?}", d.num_rows());
-    println!("rb: {:?}", d);
+    // println!("column_length: {:?}", d.num_rows());
+    // println!("rb: {:?}", d);
+
+    // Create a boolean array representing the predicate condition
+    let column = d.schema().index_of("abv").unwrap_or(42);
+    let col_array = d.column(3);
+
+    let value = 0.06;
+    let ba = make_boolean_array_float64(d, column, value);
+
+    // Filter the record batch based on the predicate
+    let filtered_record_batch = filter_record_batch(d, &ba).unwrap();
+    // write to csv
+    write_record_batch_to_csv(&filtered_record_batch, "output");
+
     
 }

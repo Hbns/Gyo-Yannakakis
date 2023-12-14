@@ -1,25 +1,15 @@
-use csv::Writer;
-use std::{error::Error, fs::File};
+use arrow::{csv::Writer, record_batch::RecordBatch};
 
-pub fn write_to_csv(data: &Vec<Vec<&str>>) -> Result<(), Box<dyn Error>> {
-    // Specify the path to the CSV file
-    let csv_file_path = "output.csv";
+use std::{error::Error, fs::File, io::BufWriter};
 
-    // Open the file in write mode
-    let file = File::create(csv_file_path)?;
+// write to csv via arrow_csv::writer
+pub fn write_record_batch_to_csv(record_batch: &RecordBatch, filename: &str) {
+    //let filename = "rb2csv.csv";
 
-    // Create a CSV writer
-    let mut csv_writer = Writer::from_writer(file);
+    // Create a file and wrap it with a buffered writer
+    let file = File::create(filename).expect("Unable to create file");
+    let buffered_file = BufWriter::new(file);
 
-    // Write the data to the CSV file
-    for row in data {
-        csv_writer.write_record(row)?;
-    }
-
-    // Flush the writer to make sure all data is written to the file
-    csv_writer.flush()?;
-
-    println!("CSV file successfully created at: {}", csv_file_path);
-
-    Ok(())
+    let mut writer = Writer::new(buffered_file);
+    writer.write(record_batch);
 }

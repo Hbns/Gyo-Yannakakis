@@ -22,9 +22,47 @@ pub struct ConjunctiveQuery {
 }
 
 // the rest of the code exist of functions to generate the queries
+// this are all the possible columns, use them for the queries, recordbatch is indexed on column name.
+/*
+// -- beers --
+let beer_id = &Term::Variable("beer_id");
+let brew_id = &Term::Variable("brew_id");
+let beer = &Term::Variable("beer");
+let abv = &Term::Variable("abv");
+let ibu = &Term::Variable("ibu");
+let ounces = &Term::Variable("ounces");
+let style = &Term::Variable("style");
+let style2 = &Term::Variable("style2");
+// -- breweries --
+let brew_id = &Term::Variable("brew_id");
+let brew_name = &Term::Variable("brew_name");
+let address1 = &Term::Variable("address1");
+let address2 = &Term::Variable("address2");
+let city = &Term::Variable("city");
+let state = &Term::Variable("state");
+let code = &Term::Variable("code");
+let country = &Term::Variable("country");
+let phone = &Term::Variable("phone");
+let website = &Term::Variable("website");
+let description = &Term::Variable("description");
+// -- categories --
+let cat_id = &Term::Variable("cat_id");
+let cat_name = &Term::Variable("cat_name");
+// -- locations --
+let loc_id = &Term::Variable("loc_id");
+let brew_id = &Term::Variable("brew_id");
+let latitude = &Term::Variable("latitude");
+let longitude = &Term::Variable("longitude");
+let accuracy = &Term::Variable("accuracy");
+// -- styles --
+let style_id = &Term::Variable("style_id");
+let cat_id = &Term::Variable("cat_id");
+let style = &Term::Variable("style");
+
+ */
 
 // cq1
-pub fn create_cq1() -> ConjunctiveQuery{
+pub fn create_cq1() -> ConjunctiveQuery {
     let u1 = &Term::Variable("u1");
     let x = &Term::Variable("x");
     let u2 = &Term::Variable("u2");
@@ -34,24 +72,24 @@ pub fn create_cq1() -> ConjunctiveQuery{
     let y = &Term::Variable("y");
     let u5 = &Term::Variable("u5");
 
-    let beers = Atom{
+    let beers = Atom {
         name: "Beers",
-        terms: vec![u1,x,u2,abv,u3,u4,y,u5]
+        terms: vec![u1, x, u2, abv, u3, u4, y, u5],
     };
 
     let u6 = &Term::Variable("u6");
     let z = &Term::Variable("z");
 
-    let styles = Atom{
+    let styles = Atom {
         name: "Styles",
-        terms: vec![u6,z,y]
+        terms: vec![u6, z, y],
     };
-    
+
     let u7 = &Term::Variable("u7");
 
-    let categories = Atom{
+    let categories = Atom {
         name: "Categories",
-        terms: vec![z,u7]
+        terms: vec![z, u7],
     };
 
     let u8 = &Term::Variable("u8");
@@ -59,9 +97,9 @@ pub fn create_cq1() -> ConjunctiveQuery{
     let u10 = &Term::Variable("u10");
     let u11 = &Term::Variable("u11");
 
-    let locations = Atom{
+    let locations = Atom {
         name: "Locations",
-        terms: vec![u8,x,u9,u10,u11]
+        terms: vec![u8, x, u9, u10, u11],
     };
 
     let u12 = &Term::Variable("u12");
@@ -72,9 +110,9 @@ pub fn create_cq1() -> ConjunctiveQuery{
     let u17 = &Term::Variable("u17");
     let u18 = &Term::Variable("u18");
 
-    let breweries = Atom{
+    let breweries = Atom {
         name: "Breweries",
-        terms: vec![x,u12,u13,u14,u15,u16,u17,u18,u13,u14,u15]
+        terms: vec![x, u12, u13, u14, u15, u16, u17, u18, u13, u14, u15],
     };
 
     let answer = Atom {
@@ -82,54 +120,69 @@ pub fn create_cq1() -> ConjunctiveQuery{
         terms: vec![],
     };
 
-    ConjunctiveQuery{
+    ConjunctiveQuery {
         head_atom: answer,
-        body_atoms: vec![beers,styles,categories,locations,breweries],
-    } 
+        body_atoms: vec![beers, styles, categories, locations, breweries],
+    }
 }
 
 // cq2
-pub fn create_cq2() -> ConjunctiveQuery{
-    let w = &Term::Variable("w");
-    let x = &Term::Variable("x");
-    let westmalle = &Term::Constant("Westmalle");
-    let u1 = &Term::Variable("u1");
-    let u2 = &Term::Variable("u2");
-    let u3 = &Term::Variable("u3");
-    let u4 = &Term::Variable("u4");
-    let u5 = &Term::Variable("u5");
-    let u6 = &Term::Variable("u6");
-    let u7 = &Term::Variable("u7");
-    let u8 = &Term::Variable("u8");
+pub fn create_cq2() -> ConjunctiveQuery {
+    // -- breweries --
+    let brew_id = &Term::Variable("brew_id");
+    let brew_name = &Term::Variable("brew_name");
+    let address1 = &Term::Constant("Westmalle");
+    let address2 = &Term::Variable("address2");
+    let city = &Term::Variable("city");
+    let state = &Term::Variable("state");
+    let code = &Term::Variable("code");
+    let country = &Term::Variable("country");
+    let phone = &Term::Variable("phone");
+    let website = &Term::Variable("website");
+    let description = &Term::Variable("description");
 
-    let breweries = Atom{
+    let breweries = Atom {
         name: "Breweries",
-        terms: vec![w,x,westmalle,u1,u2,u3,u4,u5,u6,u7,u8]
+        terms: vec![
+            brew_id,
+            brew_name,
+            address1,
+            address2,
+            city,
+            state,
+            code,
+            country,
+            phone,
+            website,
+            description,
+        ],
     };
 
-    let u9 = &Term::Variable("u9");
-    let y = &Term::Variable("y");
-    let z = &Term::Variable("z");
-    let u10 = &Term::Variable("u10");
+    // -- locations --
+    let loc_id = &Term::Variable("loc_id");
 
-    let locations = Atom{
+    let latitude = &Term::Variable("latitude");
+    let longitude = &Term::Variable("longitude");
+    let accuracy = &Term::Variable("accuracy");
+
+    let locations = Atom {
         name: "Locations",
-        terms: vec![u9,w,y,z,u10],
+        terms: vec![loc_id, brew_id, latitude, longitude, accuracy],
     };
 
     let answer = Atom {
         name: "Answer",
-        terms: vec![x,y,z],
+        terms: vec![brew_name, latitude, longitude],
     };
-   
-     ConjunctiveQuery{
+
+    ConjunctiveQuery {
         head_atom: answer,
-        body_atoms: vec![breweries,locations],
-    } 
+        body_atoms: vec![breweries, locations],
+    }
 }
 
 // cq3
-pub fn create_cq3() -> ConjunctiveQuery{
+pub fn create_cq3() -> ConjunctiveQuery {
     let x = &Term::Variable("x");
     let z = &Term::Variable("z");
     let u1 = &Term::Variable("u1");
@@ -138,38 +191,38 @@ pub fn create_cq3() -> ConjunctiveQuery{
     let u4 = &Term::Variable("u4");
     let u5 = &Term::Variable("u5");
     let u6 = &Term::Variable("u6");
-  
-    let beers = Atom{
+
+    let beers = Atom {
         name: "Beers",
-        terms: vec![u1,u2,z,u3,u4,u5,x,u6],
+        terms: vec![u1, u2, z, u3, u4, u5, x, u6],
     };
 
     let u7 = &Term::Variable("u7");
     let y = &Term::Variable("y");
-    
-    let styles = Atom{
+
+    let styles = Atom {
         name: "Styles",
-        terms: vec![u7,y,x],
+        terms: vec![u7, y, x],
     };
 
-    let categories = Atom{
+    let categories = Atom {
         name: "Categories",
-        terms: vec![y,z],
+        terms: vec![y, z],
     };
 
     let answer = Atom {
         name: "Answer",
-        terms: vec![x,y,z],
+        terms: vec![x, y, z],
     };
-   
-     ConjunctiveQuery{
+
+    ConjunctiveQuery {
         head_atom: answer,
-        body_atoms: vec![beers,styles,categories],
-    } 
+        body_atoms: vec![beers, styles, categories],
+    }
 }
 
 // cq4
-pub fn create_cq4() -> ConjunctiveQuery{
+pub fn create_cq4() -> ConjunctiveQuery {
     let u1 = &Term::Variable("u1");
     let v = &Term::Variable("v");
     let x = &Term::Variable("x");
@@ -178,96 +231,112 @@ pub fn create_cq4() -> ConjunctiveQuery{
     let u2 = &Term::Variable("u2");
     let style = &Term::Constant("Vienna Larger");
     let u3 = &Term::Variable("u3");
-     
-    let beers = Atom{
+
+    let beers = Atom {
         name: "Beers",
-        terms: vec![u1,v,x,abv,ibu,u2,style,u3],
+        terms: vec![u1, v, x, abv, ibu, u2, style, u3],
     };
 
     let u4 = &Term::Variable("u4");
     let y = &Term::Variable("y");
     let z = &Term::Variable("z");
     let w = &Term::Variable("w");
-    
-    let locations = Atom{
+
+    let locations = Atom {
         name: "Locations",
-        terms: vec![u4,v,y,z,w],
+        terms: vec![u4, v, y, z, w],
     };
 
     let answer = Atom {
         name: "Answer",
-        terms: vec![x,y,z,w],
+        terms: vec![x, y, z, w],
     };
-   
-     ConjunctiveQuery{
+
+    ConjunctiveQuery {
         head_atom: answer,
-        body_atoms: vec![beers,locations],
-    } 
+        body_atoms: vec![beers, locations],
+    }
 }
 
 // cq5
-pub fn create_cq5() -> ConjunctiveQuery{
-    let u1 = &Term::Variable("u1");
-    let x = &Term::Variable("x");
-    let u2 = &Term::Variable("u2");
-    let abv = &Term::Constant("0.06");
-    let u3 = &Term::Variable("u3");
-    let u4 = &Term::Variable("u4");
-    let y = &Term::Variable("y");
-    let u5 = &Term::Variable("u5");
+pub fn create_cq5() -> ConjunctiveQuery {
+    // only in -- beers --
+    let beer_id = &Term::Variable("beer_id");
+    let brew_id = &Term::Variable("brew_id");
+    let beer = &Term::Variable("beer");
+    let abv = &&Term::Constant("0.06");
+    let ibu = &Term::Variable("ibu");
+    let ounces = &Term::Variable("ounces");
+    let style = &Term::Variable("style");
+    let style2 = &Term::Variable("style2");
+    // only in-- breweries --
+    let brew_name = &Term::Variable("brew_name");
+    let address1 = &Term::Variable("address1");
+    let address2 = &Term::Variable("address2");
+    let city = &Term::Variable("city");
+    let state = &Term::Variable("state");
+    let code = &Term::Variable("code");
+    let country = &Term::Variable("country");
+    let phone = &Term::Variable("phone");
+    let website = &Term::Variable("website");
+    let description = &Term::Variable("description");
+    // only in -- categories --
+    let cat_id = &Term::Variable("cat_id");
+    let cat_name = &Term::Variable("cat_name");
+    // only in -- locations --
+    let loc_id = &Term::Variable("loc_id");
+    let latitude = &Term::Variable("latitude");
+    let longitude = &Term::Variable("longitude");
+    let accuracy = &Term::Variable("accuracy");
+    // only in -- styles --
+    let style_id = &Term::Variable("style_id");
 
-    let beers = Atom{
+    let beers = Atom {
         name: "Beers",
-        terms: vec![u1,x,u2,abv,u3,u4,y,u5]
+        terms: vec![beer_id, brew_id, beer, abv, ibu, ounces, style, style2],
     };
 
-    let u6 = &Term::Variable("u6");
-    let z = &Term::Variable("z");
-    
-    let styles = Atom{
+    let styles = Atom {
         name: "Styles",
-        terms: vec![u6,z,y]
+        terms: vec![style_id, cat_id, style],
     };
-    
-    let w = &Term::Variable("w");
-    
-    let categories = Atom{
+
+    let categories = Atom {
         name: "Categories",
-        terms: vec![z,w]
+        terms: vec![cat_id, cat_name],
     };
 
-    let u8 = &Term::Variable("u8");
-    let u9 = &Term::Variable("u9");
-    let u10 = &Term::Variable("u10");
-    let u11 = &Term::Variable("u11");
-
-    let locations = Atom{
+    let locations = Atom {
         name: "Locations",
-        terms: vec![u8,x,u9,u10,u11]
+        terms: vec![loc_id, brew_id, latitude, longitude, accuracy],
     };
 
-    let u12 = &Term::Variable("u12");
-    let u13 = &Term::Variable("u13");
-    let u14 = &Term::Variable("u14");
-    let u15 = &Term::Variable("u15");
-    let u16 = &Term::Variable("u16");
-    let u17 = &Term::Variable("u17");
-    let u18 = &Term::Variable("u18");
-
-    let breweries = Atom{
+    let breweries = Atom {
         name: "Breweries",
-        terms: vec![x,u12,u13,u14,u15,u16,u17,u18,u13,u14,u15]
+        terms: vec![
+            brew_id,
+            brew_name,
+            address1,
+            address2,
+            city,
+            state,
+            code,
+            country,
+            phone,
+            website,
+            description,
+        ],
     };
 
     let answer = Atom {
         name: "Answer",
-        terms: vec![x,y,z,w],
+        terms: vec![brew_id, style, cat_id, cat_name],
     };
 
-    ConjunctiveQuery{
+    ConjunctiveQuery {
         head_atom: answer,
-        body_atoms: vec![beers,styles,categories,locations,breweries],
-    } 
+        body_atoms: vec![beers, styles, categories, locations, breweries],
+    }
 }
 
 pub fn create_example_query() -> ConjunctiveQuery {
@@ -291,16 +360,7 @@ pub fn create_example_query() -> ConjunctiveQuery {
     };
     let beers = Atom {
         name: "Beers",
-        terms: vec![
-            beer_id,
-            brew_id,
-            beer,
-            abv,
-            ibu,
-            ounces,
-            style,
-            style2,
-        ],
+        terms: vec![beer_id, brew_id, beer, abv, ibu, ounces, style, style2],
     };
     let styles = Atom {
         name: "Styles",
