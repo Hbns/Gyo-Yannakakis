@@ -18,7 +18,32 @@ Gyo reduction is performed on the body atoms of the conjunctive query.
 use crate::queries::{ConjunctiveQuery, Term};
 use std::collections::HashSet;
 
-pub fn acyclic_test(query: &ConjunctiveQuery) {
+pub fn acyclic_test(query: &ConjunctiveQuery){
+    // make mutable vector containing all ears.
+    let mut ears = collect_ears(&query);
+    let mut modified = true;
+
+    while modified {
+        let ears_clone = ears.clone(); // Make a clone to check for modifications
+
+        remove_unique_items(&mut ears);
+        println!("removed_unique: {:?}", ears);
+        remove_single_item_vectors(&mut ears);
+        println!("removed_single_item: {:?}", ears);
+
+        // Check if modifications were made
+        modified = ears != ears_clone;
+    }
+
+    if ears.iter().any(|vector| !vector.is_empty()) {
+        println!("cyclic");
+    } else {
+        println!("acyclic");
+    }
+}
+
+
+pub fn acyclic_test2(query: &ConjunctiveQuery) {
     // make mutable vector containing all ears.
     let mut ears = collect_ears(&query);
 
@@ -26,10 +51,13 @@ pub fn acyclic_test(query: &ConjunctiveQuery) {
 
     // Delete all vertex that appears in at most one hyperedge.
     remove_unique_items(&mut ears);
+    println!("removed_unique1: {:?}", ears);
     // Delete a hyperedge that is contained in another hyperedge.
     remove_single_item_vectors(&mut ears);
+    println!("removed_single_item: {:?}", ears);
     // Delete all vertex that appears in at most one hyperedge.
     remove_unique_items(&mut ears);
+    println!("removed_unique2: {:?}", ears);
 
     // print!("{:?}", ears);
     // print (a)cyclic depending on items left in the ears vector
@@ -52,7 +80,9 @@ fn collect_ears(query: &ConjunctiveQuery) -> Vec<Vec<&Term>> {
     }
 
     // Return the collected ears vector
+    println!("collected_ears: {:?}", ears);
     ears
+    
 }
 
 fn remove_unique_items(vectors: &mut Vec<Vec<&Term>>) {
@@ -68,10 +98,6 @@ fn remove_unique_items(vectors: &mut Vec<Vec<&Term>>) {
         }
     }
 
-    // Now you have unique_items populated with owned values of Term
-    // You can continue with the rest of your logic...
-
-
     // Step 3: Iterate through each vector and remove items that are unique to that vector
     for (vector_index, vector) in vectors.iter_mut().enumerate() {
         vector.retain(|item| {
@@ -86,6 +112,10 @@ fn remove_unique_items(vectors: &mut Vec<Vec<&Term>>) {
 }
 
 fn remove_single_item_vectors(vectors: &mut Vec<Vec<&Term>>) {
+    vectors.retain(|vector| vector.len() > 1);
+}
+
+fn remove_single_item_vectors2(vectors: &mut Vec<Vec<&Term>>) {
     // Step 1: Find vectors of size one
     let single_item_vectors: Vec<_> = vectors
         .iter()

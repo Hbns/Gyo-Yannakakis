@@ -7,7 +7,10 @@ use std::fs::File;
 use std::sync::Arc;
 
 mod queries;
-use queries::{create_cyclic_example_query, create_example_query};
+use queries::{
+    create_cq1, create_cq2, create_cq3, create_cq4, create_cq5, create_cyclic_example_query,
+    create_example_query,
+};
 
 mod gyo;
 use gyo::acyclic_test;
@@ -18,22 +21,14 @@ use jointrees::{join_tree, reduce};
 mod yannakaki;
 use yannakaki::yannakaki;
 
+mod csvout;
+use csvout::write_to_csv;
+
 fn process_file(file_path: &str, schema: Arc<Schema>) -> Result<RecordBatch, Box<dyn Error>> {
     let file = File::open(file_path)?;
     let mut csv = ReaderBuilder::new(schema).has_header(true).build(file)?;
     let batch = csv.next().ok_or("No record batch found")??;
 
-    //Process the batch
-    //Print the schema
-    //println!("Schema: {:?}", batch.schema());
-
-    /*
-    // Print the data in the RecordBatch
-    for i in 0..batch.num_columns() {
-        let column = batch.column(i);
-        println!("Column {}: {:?}", batch.schema().field(i).name(), column);
-    }
-    */
     println!("Successfully read a batch from file: {}", file_path);
 
     Ok(batch)
@@ -78,10 +73,32 @@ fn main() -> Result<(), Box<dyn Error>> {
     // Call collect_ears function
     //acyclic_test(&query);
 
-    //let cquery = create_cyclic_example_query();
+    let cquery = create_cyclic_example_query();
     //println!("{:?}", cquery);
-    //acyclic_test(&cquery);
-    yannakaki(&query, &mut record_batch_map);
+    let cq1 = create_cq1();
+    let cq2 = create_cq2();
+    let cq3 = create_cq3();
+    let cq4 = create_cq4();
+    let cq5 = create_cq5();
+    acyclic_test(&query);
+    acyclic_test(&cq1);
+    acyclic_test(&cq2);
+    acyclic_test(&cq3);
+    acyclic_test(&cq4);
+    acyclic_test(&cq5);
+    acyclic_test(&cquery);
+    //yannakaki(&query, &mut record_batch_map);
 
+    /*
+        // Prepare your data as vectors of vectors (rows and columns)
+        // to be written to csv.
+        let data_out: Vec<Vec<&str>> = vec![
+            vec!["query_id", "is_acyclic", "bool_answer", "attr_x_answer", "attr_y_answer", "attr_z_answer", "attr_w_answer"],
+            vec!["1", "t", "f", "some", "", "somezz", "someww"],
+            vec!["2", "t", "t", "", "", "somezz", "someww"],
+            // Add more rows as needed
+        ];
+        write_to_csv(&data_out);
+    */
     Ok(())
 }

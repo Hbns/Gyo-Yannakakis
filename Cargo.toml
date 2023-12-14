@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 arrow = "47.0.0"
-
+csv = "1.1"

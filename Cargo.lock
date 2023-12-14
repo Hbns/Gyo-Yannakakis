@@ -362,6 +362,7 @@ name = "dim"
 version = "0.1.0"
 dependencies = [
  "arrow",
+ "csv",
 ]
 
 [[package]]
