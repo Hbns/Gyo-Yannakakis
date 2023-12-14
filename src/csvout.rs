@@ -1,5 +1,5 @@
-use std::{fs::File, error::Error};
 use csv::Writer;
+use std::{error::Error, fs::File};
 
 pub fn write_to_csv(data: &Vec<Vec<&str>>) -> Result<(), Box<dyn Error>> {
     // Specify the path to the CSV file

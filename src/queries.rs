@@ -21,7 +21,7 @@ pub struct ConjunctiveQuery {
     pub body_atoms: Vec<Atom>,
 }
 
-// Five conjunctive quries to test the implementation
+// the rest of the code exist of functions to generate the queries
 
 // cq1
 pub fn create_cq1() -> ConjunctiveQuery{
@@ -316,6 +316,7 @@ pub fn create_example_query() -> ConjunctiveQuery {
         body_atoms: vec![beers, styles, categories],
     }
 }
+
 // book page 156: The canonical example
 // of an undirected graph that is not acyclic
 pub fn create_cyclic_example_query() -> ConjunctiveQuery {

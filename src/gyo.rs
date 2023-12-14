@@ -18,11 +18,13 @@ Gyo reduction is performed on the body atoms of the conjunctive query.
 use crate::queries::{ConjunctiveQuery, Term};
 use std::collections::HashSet;
 
-pub fn acyclic_test(query: &ConjunctiveQuery){
+// function to test if a conjunctive qury is acyclic
+pub fn acyclic_test(query: &ConjunctiveQuery) {
     // make mutable vector containing all ears.
     let mut ears = collect_ears(&query);
     let mut modified = true;
 
+    // loop untill the conjuctive qury is empty or nothing can be roved anymore
     while modified {
         let ears_clone = ears.clone(); // Make a clone to check for modifications
 
@@ -31,7 +33,7 @@ pub fn acyclic_test(query: &ConjunctiveQuery){
         remove_single_item_vectors(&mut ears);
         println!("removed_single_item: {:?}", ears);
 
-        // Check if modifications were made
+        // check if modifications were made
         modified = ears != ears_clone;
     }
 
@@ -41,55 +43,27 @@ pub fn acyclic_test(query: &ConjunctiveQuery){
         println!("acyclic");
     }
 }
-
-
-pub fn acyclic_test2(query: &ConjunctiveQuery) {
-    // make mutable vector containing all ears.
-    let mut ears = collect_ears(&query);
-
-    // Perform GYO:
-
-    // Delete all vertex that appears in at most one hyperedge.
-    remove_unique_items(&mut ears);
-    println!("removed_unique1: {:?}", ears);
-    // Delete a hyperedge that is contained in another hyperedge.
-    remove_single_item_vectors(&mut ears);
-    println!("removed_single_item: {:?}", ears);
-    // Delete all vertex that appears in at most one hyperedge.
-    remove_unique_items(&mut ears);
-    println!("removed_unique2: {:?}", ears);
-
-    // print!("{:?}", ears);
-    // print (a)cyclic depending on items left in the ears vector
-    if ears.iter().any(|vector| !vector.is_empty()) {
-        println!("cyclic");
-    } else {
-        println!("acyclic");
-    }
-}
-
+// collect all ears of the conjunctive query
 fn collect_ears(query: &ConjunctiveQuery) -> Vec<Vec<&Term>> {
-    // Initialize a vector to store the terms vectors
+    // initialize a vector to store the terms vectors
     let mut ears: Vec<Vec<&Term>> = Vec::new();
 
-    // Iterate through body atoms
+    // iterate through body atoms
     for body_atom in &query.body_atoms {
-        // Extract the terms vector from each body atom and add it to the ears vector
         let terms_vector: Vec<&Term> = body_atom.terms.clone();
         ears.push(terms_vector);
     }
 
-    // Return the collected ears vector
+    // return the collected ears vector
     println!("collected_ears: {:?}", ears);
     ears
-    
 }
-
+// remove all items unique to there ear(vector).
 fn remove_unique_items(vectors: &mut Vec<Vec<&Term>>) {
-    // Step 1: Create a HashSet for each vector
+    // create a HashSet for each vector
     let mut unique_items: Vec<HashSet<Term>> = vectors.iter().map(|_| HashSet::new()).collect();
 
-    // Step 2: Iterate through all vectors to populate and update the HashSet
+    // iterate through all vectors to populate and update the HashSet
     for (vector_index, vector) in vectors.iter().enumerate() {
         for item in vector {
             // Clone the item to insert it into the HashSet
@@ -98,7 +72,7 @@ fn remove_unique_items(vectors: &mut Vec<Vec<&Term>>) {
         }
     }
 
-    // Step 3: Iterate through each vector and remove items that are unique to that vector
+    // iterate through each vector and remove items that are unique to that vector
     for (vector_index, vector) in vectors.iter_mut().enumerate() {
         vector.retain(|item| {
             unique_items
@@ -111,32 +85,7 @@ fn remove_unique_items(vectors: &mut Vec<Vec<&Term>>) {
     }
 }
 
+// do not keep ears existing of one element
 fn remove_single_item_vectors(vectors: &mut Vec<Vec<&Term>>) {
     vectors.retain(|vector| vector.len() > 1);
-}
-
-fn remove_single_item_vectors2(vectors: &mut Vec<Vec<&Term>>) {
-    // Step 1: Find vectors of size one
-    let single_item_vectors: Vec<_> = vectors
-        .iter()
-        .filter(|vector| vector.len() == 1)
-        .cloned()
-        .collect();
-
-    // Step 2: Create a HashSet of items in vectors with size > 1
-    let items_in_multi_item_vectors: HashSet<_> = vectors
-        .iter()
-        .filter(|vector| vector.len() > 1)
-        .flat_map(|vector| vector.iter().cloned())
-        .collect();
-
-    // Step 3: Remove vectors of size one if the item exists in another vector
-    vectors.retain(|vector| {
-        if vector.len() == 1 {
-            let item = &vector[0];
-            !items_in_multi_item_vectors.contains(item)
-        } else {
-            true
-        }
-    });
 }

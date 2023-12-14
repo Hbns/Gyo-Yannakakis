@@ -67,19 +67,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         let batch = process_file(file_path, Arc::new(schema))?;
         record_batch_map.insert(key.clone(), batch);
     }
-    // print the example query F1
-    let query = create_example_query();
-    //println!("{:?}", query);
-    // Call collect_ears function
-    //acyclic_test(&query);
 
+    // make all queries
+    let query = create_example_query();
     let cquery = create_cyclic_example_query();
-    //println!("{:?}", cquery);
     let cq1 = create_cq1();
     let cq2 = create_cq2();
     let cq3 = create_cq3();
     let cq4 = create_cq4();
     let cq5 = create_cq5();
+
+    /*
+    Tests i query is acyclic
     acyclic_test(&query);
     acyclic_test(&cq1);
     acyclic_test(&cq2);
@@ -87,17 +86,20 @@ fn main() -> Result<(), Box<dyn Error>> {
     acyclic_test(&cq4);
     acyclic_test(&cq5);
     acyclic_test(&cquery);
+     */
+
     //yannakaki(&query, &mut record_batch_map);
 
     /*
-        // Prepare your data as vectors of vectors (rows and columns)
         // to be written to csv.
         let data_out: Vec<Vec<&str>> = vec![
             vec!["query_id", "is_acyclic", "bool_answer", "attr_x_answer", "attr_y_answer", "attr_z_answer", "attr_w_answer"],
-            vec!["1", "t", "f", "some", "", "somezz", "someww"],
-            vec!["2", "t", "t", "", "", "somezz", "someww"],
-            // Add more rows as needed
-        ];
+            vec!["1", "f", "f", "", "", "", ""],
+            vec!["2", "f", "", "", "", "", ""],
+            vec!["3", "t", "", "", "", "", ""],
+            vec!["4", "f", "", "", "", "", ""],
+            vec!["5", "f", "", "", "", "", ""],
+            ];
         write_to_csv(&data_out);
     */
     Ok(())
