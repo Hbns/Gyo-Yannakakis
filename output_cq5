@@ -1,0 +1,45 @@
+beer_id,brew_id,beer,abv,ibu,ounces,style,style2
+161,551,Red Mountain Ale,0.06,NA,12.0,American Amber / Red Ale,American Amber / Red Ale
+179,160,Kilt Lifter Scottish-Style Ale (2009),0.06,21,12.0,Scottish Ale,NA
+184,227,The Public,0.06,NA,12.0,American Pale Ale (APA),American Pale Ale (APA)
+271,212,11th Hour IPA,0.06,NA,12.0,American IPA,American IPA
+309,478,Good People IPA,0.06,64,12.0,American IPA,American IPA
+311,478,Coffee Oatmeal Stout,0.06,54,12.0,Oatmeal Stout,NA
+352,327,Over Ale,0.06,NA,16.0,American Brown Ale,NA
+366,361,Jack Stout,0.06,23,12.0,Oatmeal Stout,NA
+371,365,Redband Stout,0.06,36,16.0,American Stout,NA
+385,10,Solitude,0.06,NA,16.0,Belgian Pale Ale,NA
+413,541,Sky High Rye,0.06,55,12.0,American Pale Ale (APA),American Pale Ale (APA)
+428,528,Shiva IPA,0.06,69,12.0,American IPA,American IPA
+501,395,Pale Dog,0.06,50,12.0,American Pale Ale (APA),American Pale Ale (APA)
+512,46,Autumnation (2011-12) (2011),0.06,48,16.0,Pumpkin Ale,NA
+582,71,Balt Altbier,0.06,NA,12.0,Altbier,NA
+603,471,Midwest Charm Farmhouse Ale,0.06,29,16.0,Saison / Farmhouse Ale,NA
+613,63,Mountain Livin' Pale Ale,0.06,NA,12.0,American Pale Ale (APA),American Pale Ale (APA)
+615,165,Frosted Fields Winter Wheat,0.06,25,16.0,American Dark Wheat Ale,NA
+618,295,Green Monsta IPA,0.06,55,12.0,American IPA,American IPA
+632,519,House Brand IPA,0.06,55,12.0,American IPA,American IPA
+686,299,Saranac White IPA,0.06,NA,12.0,American IPA,American IPA
+690,375,Sobrehumano Palena'ole,0.06,24,12.0,American Amber / Red Ale,American Amber / Red Ale
+692,489,Blue Point White IPA,0.06,40,12.0,American White IPA,NA
+693,379,Flying Jenny Extra Pale Ale (2012),0.06,54,12.0,American Pale Ale (APA),American Pale Ale (APA)
+849,327,Meat Wave,0.06,NA,16.0,English India Pale Ale (IPA),NA
+978,374,Old Red Beard Amber Ale,0.06,35,12.0,American Amber / Red Ale,American Amber / Red Ale
+983,279,Backyahd IPA,0.06,NA,12.0,American IPA,American IPA
+984,379,Leaning Chimney Smoked Porter,0.06,34,16.0,American Porter,NA
+988,479,Davy Jones Lager,0.06,NA,12.0,Cream Ale,NA
+989,479,AARGHtoberfest!,0.06,30,12.0,MÃ¤rzen / Oktoberfest,NA
+1001,477,413 Farmhouse Ale,0.06,NA,12.0,Saison / Farmhouse Ale,NA
+1028,365,Aaah Bock Lager,0.06,NA,16.0,Vienna Lager,NA
+1044,10,Big Red Coq,0.06,NA,16.0,American Amber / Red Ale,American Amber / Red Ale
+1057,472,South Ridge Amber Ale,0.06,31,16.0,American Amber / Red Ale,American Amber / Red Ale
+1086,128,Four Squared (2015),0.06,50,12.0,American Blonde Ale,American Blonde Ale
+1108,464,Sweet As Pacific Ale,0.06,18,12.0,American Pale Wheat Ale,American Pale Wheat Ale
+1110,369,River Runners Pale Ale,0.06,NA,16.0,American Pale Ale (APA),American Pale Ale (APA)
+1124,91,Happy Amber,0.06,30,12.0,American Amber / Red Ale,American Amber / Red Ale
+1154,463,Terlingua Gold,0.06,NA,12.0,American Blonde Ale,American Blonde Ale
+1168,244,Farm Girl Saison,0.06,30,16.0,Saison / Farmhouse Ale,NA
+1188,378,Duke's Cold Nose Brown Ale,0.06,NA,12.0,American Brown Ale,NA
+1189,435,Honeyspot Road White IPA,0.06,NA,12.0,American White IPA,NA
+1254,32,JP's Ould Sod Irish Red IPA,0.06,NA,12.0,American IPA,American IPA
+1261,75,Bent Paddle Black Ale,0.06,34,12.0,American Black Ale,NA

@@ -1,0 +1,7 @@
+query_id,is_acyclic,bool_answer,attr_x_answer,attr_y_answer,attr_z_answer,attr_w_answer
+1,t,t,,,,
+2,t,,,,,
+3,f,,,,,
+4,t,,Snake River Lager,39.2904,-76.6122,APPROXIMATE
+5,t,,71,Altbier,4,German Ale
+5,t,,478,Oatmeal Stout,1,Britich Ale
