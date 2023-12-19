@@ -23,11 +23,9 @@ pub fn acyclic_test(query: &ConjunctiveQuery) {
     // make mutable vector containing all ears.
     let mut ears = collect_ears(&query);
     let mut modified = true;
-
     // loop untill the conjuctive qury is empty or nothing can be roved anymore
     while modified {
         let ears_clone = ears.clone(); // Make a clone to check for modifications
-
         remove_unique_items(&mut ears);
         println!("removed_unique: {:?}", ears);
         remove_single_item_vectors(&mut ears);

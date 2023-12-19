@@ -52,6 +52,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Create a HashMap to store RecordBatches with keys
     let mut record_batch_map: HashMap<String, RecordBatch> = HashMap::new();
+    
 
     for (file_path, key) in data.iter().zip(keys.iter()) {
         let schema = match csv::infer_schema_from_files(&[file_path.to_string()], b',', None, true)
@@ -67,7 +68,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         let batch = process_file(file_path, Arc::new(schema))?;
         record_batch_map.insert(key.clone(), batch);
     }
-
+    println!("rbm: {:?}", record_batch_map);
     // make all queries
     let query = create_example_query();
     let cquery = create_cyclic_example_query();
@@ -93,17 +94,17 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     //reduce(infor, &mut record_batch_map);
 
-    yannakaki(&cq2, &mut record_batch_map);
+    yannakaki(&cq4, &mut record_batch_map);
 
     /*
         // to be written to csv.
         let data_out: Vec<Vec<&str>> = vec![
             vec!["query_id", "is_acyclic", "bool_answer", "attr_x_answer", "attr_y_answer", "attr_z_answer", "attr_w_answer"],
             vec!["1", "f", "f", "", "", "", ""],
-            vec!["2", "f", "", "", "", "", ""],
-            vec!["3", "t", "", "", "", "", ""],
-            vec!["4", "f", "", "", "", "", ""],
-            vec!["5", "f", "", "", "", "", ""],
+            vec!["2", "t", "", "", "", "", ""], // no Westmalle in address1
+            vec!["3", "f", "", "", "", "", ""],
+            vec!["4", "t", "", "", "", "", ""],
+            vec!["5", "t", "", "", "", "", ""],
             ];
         write_to_csv(&data_out);
     */

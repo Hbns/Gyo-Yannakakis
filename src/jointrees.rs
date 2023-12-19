@@ -1,16 +1,11 @@
 // Join trees:
 
-use std::{
-    collections::{HashMap, HashSet, VecDeque},
-    error::Error,
-    sync::Arc,
-};
+use std::collections::{HashMap, HashSet};
 
 use arrow::{
-    array::{new_empty_array, Array, ArrayRef, BooleanArray, Int64Array, StringArray, Float64Array},
-    compute::{and, filter, kernels::cmp::eq, filter_record_batch},
+    array::{Array, BooleanArray, Float64Array, Int64Array, StringArray},
+    compute::filter_record_batch,
     datatypes::DataType,
-    ipc::Utf8,
     record_batch::RecordBatch,
 };
 
@@ -18,7 +13,7 @@ use arrow::{
 // • the nodes of T are precisely the hyperedges in E and,
 // • for each node v in V , the set of nodes of T in which v is an element
 // forms a connected subtree of T.
-use crate::queries::{Atom, ConjunctiveQuery, Term};
+use crate::queries::{Atom, Term};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct JoinTreeNode {
@@ -35,7 +30,6 @@ impl JoinTreeNode {
             children: Vec::new(),
         }
     }
-
     fn add_child(&mut self, child: JoinTreeNode) {
         self.children.push(child);
     }
@@ -100,50 +94,6 @@ fn build_tree(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
         // Remove the nodes that are now children from thisnodes
         // thisnodes.retain(|n| !nodes_to_remove.contains(n));
         Some(lnode)
-    } else {
-        None
-    }
-}
-
-//recursive version, not workin corrdctly
-fn buildjt3(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
-    fn build_recursive(thisnode: JoinTreeNode, thisnodes: Vec<JoinTreeNode>) -> JoinTreeNode {
-        let mut lnode = thisnode.clone();
-        let mut nodes_to_remove = Vec::new();
-
-        for node in &thisnodes {
-            let mut common_found = false;
-
-            // Check all common terms with the current thisnode
-            for common in &thisnode.common_term {
-                if node.common_term.contains(common) {
-                    common_found = true;
-                    break;
-                }
-            }
-
-            if common_found {
-                lnode.add_child(node.clone());
-                nodes_to_remove.push(node.clone());
-            }
-        }
-
-        // Remove the nodes that are now children from thisnodes
-        let mut remaining_nodes: Vec<JoinTreeNode> = thisnodes
-            .into_iter()
-            .filter(|n| !nodes_to_remove.contains(n))
-            .collect();
-
-        // Recursively build children for each child
-        for child in &mut lnode.children {
-            *child = build_recursive(child.clone(), remaining_nodes.clone()); // Use a new clone for each recursive call
-        }
-
-        lnode
-    }
-
-    if let Some(thisnode) = nodes.last().cloned() {
-        Some(build_recursive(thisnode, nodes))
     } else {
         None
     }
@@ -267,43 +217,63 @@ fn make_boolean_array(
             _ => panic!("Unsupported data type: {:?}", col_r1.data_type()),
         }
     }
-//println!("bool: {:?}", result);
+    //println!("bool: {:?}", result);
     BooleanArray::from(result)
 }
 
 // make a boolean array for value depending of the column type:
-fn make_boolean_array_string(relation: &RecordBatch, column_index: usize, value: &str) -> BooleanArray {
-    let col = relation.column(column_index).as_any().downcast_ref::<StringArray>().unwrap();
-    let result = col.iter().map(|item| item.as_deref() == Some(value)).collect::<Vec<_>>();
-    BooleanArray::from(result)
-}
-
-fn make_boolean_array_int64(relation: &RecordBatch, column_index: usize, value: i64) -> BooleanArray {
-    let col = relation.column(column_index).as_any().downcast_ref::<Int64Array>().unwrap();
-    let result = col.iter().map(|item| item == Some(value)).collect::<Vec<_>>();
-    BooleanArray::from(result)
-}
-
-pub fn make_boolean_array_float64(relation: &RecordBatch, column_index: usize, value: f64) -> BooleanArray {
-    let col = relation.column(column_index).as_any().downcast_ref::<Float64Array>().unwrap();
-    let result = col.iter().map(|item| item == Some(value)).collect::<Vec<_>>();
-    BooleanArray::from(result)
-}
-
-/*
-fn filter_record_batch(record_batch: &RecordBatch, filter_array: &BooleanArray) -> RecordBatch {
-    // Use the filter function to filter the record batch based on the boolean array
-    let filtered_arrays = record_batch
-        .columns()
+pub fn make_boolean_array_string(
+    relation: &RecordBatch,
+    column_index: usize,
+    value: &str,
+) -> BooleanArray {
+    let col = relation
+        .column(column_index)
+        .as_any()
+        .downcast_ref::<StringArray>()
+        .unwrap();
+    let result = col
         .iter()
-        .map(|array| filter(array, filter_array).unwrap())
-        .collect();
-
-    // Create a new record batch with filtered arrays
-    RecordBatch::try_new(record_batch.schema().clone(), filtered_arrays).unwrap()
+        .map(|item| item.as_deref().map_or(false, |s| s.contains(value)))
+        .collect::<Vec<_>>();
+    BooleanArray::from(result)
 }
- */
-pub fn reduce(infos: Vec<Vec<String>>, data: &mut HashMap<String, RecordBatch>){
+
+pub fn make_boolean_array_int64(
+    relation: &RecordBatch,
+    column_index: usize,
+    value: i64,
+) -> BooleanArray {
+    let col = relation
+        .column(column_index)
+        .as_any()
+        .downcast_ref::<Int64Array>()
+        .unwrap();
+    let result = col
+        .iter()
+        .map(|item| item == Some(value))
+        .collect::<Vec<_>>();
+    BooleanArray::from(result)
+}
+
+pub fn make_boolean_array_float64(
+    relation: &RecordBatch,
+    column_index: usize,
+    value: f64,
+) -> BooleanArray {
+    let col = relation
+        .column(column_index)
+        .as_any()
+        .downcast_ref::<Float64Array>()
+        .unwrap();
+    let result = col
+        .iter()
+        .map(|item| item == Some(value))
+        .collect::<Vec<_>>();
+    BooleanArray::from(result)
+}
+
+pub fn reduce(infos: Vec<Vec<String>>, data: &mut HashMap<String, RecordBatch>) {
     //let infos2 = infos.clone();
     for info in infos {
         // distribute the info from the vector
@@ -337,6 +307,5 @@ pub fn reduce(infos: Vec<Vec<String>>, data: &mut HashMap<String, RecordBatch>){
         let filtered_relation1 = filter_record_batch(record_batch1.unwrap(), &boolean_array);
         data.insert(key1.clone(), filtered_relation1.unwrap());
         //println!("filtered {:?}", filtered);
-     
     }
 }

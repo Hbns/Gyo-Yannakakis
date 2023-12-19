@@ -160,7 +160,6 @@ pub fn create_cq2() -> ConjunctiveQuery {
 
     // -- locations --
     let loc_id = &Term::Variable("loc_id");
-
     let latitude = &Term::Variable("latitude");
     let longitude = &Term::Variable("longitude");
     let accuracy = &Term::Variable("accuracy");
@@ -223,33 +222,36 @@ pub fn create_cq3() -> ConjunctiveQuery {
 
 // cq4
 pub fn create_cq4() -> ConjunctiveQuery {
-    let u1 = &Term::Variable("u1");
-    let v = &Term::Variable("v");
-    let x = &Term::Variable("x");
+    // -- beers --
+    let beer_id = &Term::Variable("beer_id");
+    let brew_id = &Term::Variable("brew_id");
+    let beer = &Term::Variable("beer");
     let abv = &Term::Constant("0.05");
     let ibu = &Term::Constant("18");
-    let u2 = &Term::Variable("u2");
-    let style = &Term::Constant("Vienna Larger");
-    let u3 = &Term::Variable("u3");
+    let ounces = &Term::Variable("ounces");
+    let style = &Term::Constant("Vienna Lager");
+    let style2 = &Term::Variable("style2");
 
     let beers = Atom {
         name: "Beers",
-        terms: vec![u1, v, x, abv, ibu, u2, style, u3],
+        terms: vec![beer_id, brew_id, beer, abv, ibu, ounces, style, style2],
     };
 
-    let u4 = &Term::Variable("u4");
-    let y = &Term::Variable("y");
-    let z = &Term::Variable("z");
-    let w = &Term::Variable("w");
+    // -- locations --
+    let loc_id = &Term::Variable("loc_id");
+
+    let latitude = &Term::Variable("latitude");
+    let longitude = &Term::Variable("longitude");
+    let accuracy = &Term::Variable("accuracy");
 
     let locations = Atom {
         name: "Locations",
-        terms: vec![u4, v, y, z, w],
+        terms: vec![loc_id, brew_id, latitude, longitude, accuracy],
     };
 
     let answer = Atom {
         name: "Answer",
-        terms: vec![x, y, z, w],
+        terms: vec![beer, latitude, longitude, accuracy],
     };
 
     ConjunctiveQuery {

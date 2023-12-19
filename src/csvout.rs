@@ -1,6 +1,6 @@
 use arrow::{csv::Writer, record_batch::RecordBatch};
 
-use std::{error::Error, fs::File, io::BufWriter};
+use std::{fs::File, io::BufWriter};
 
 // write to csv via arrow_csv::writer
 pub fn write_record_batch_to_csv(record_batch: &RecordBatch, filename: &str) {
