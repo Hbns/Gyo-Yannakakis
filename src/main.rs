@@ -41,7 +41,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         "Styles".to_string(),
     ];
 
-    // Create a HashMap to store RecordBatches with keys
+    // Create a HashMap to store RecordBatches
     let mut record_batch_map: HashMap<String, RecordBatch> = HashMap::new();
 
     for (file_path, key) in data.iter().zip(keys.iter()) {
@@ -79,6 +79,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     acyclic_test(&cquery);
      */
 
+    // run yannakaki 
     yannakaki(&cq4, &mut record_batch_map);
 
     Ok(())

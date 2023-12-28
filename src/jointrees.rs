@@ -45,8 +45,7 @@ fn build_tree(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
 
         let mut remaining_nodes = Vec::new();
         let mut nodes_to_remove = Vec::new();
-        //let mut check_child_nodes = Vec::new();
-
+        
         for node in &thisnodes {
             let mut common_found = false;
 
@@ -66,7 +65,7 @@ fn build_tree(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
             }
         }
 
-        // verify each child with remaingin nodes.
+        // verify each child with remaining nodes.
 
         for child in &mut lnode.children {
             // remove the nodes that are childs now.
@@ -92,8 +91,6 @@ fn build_tree(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
             *child = child_clone;
         }
 
-        // Remove the nodes that are now children from thisnodes
-        // thisnodes.retain(|n| !nodes_to_remove.contains(n));
         Some(lnode)
     } else {
         None
@@ -102,12 +99,9 @@ fn build_tree(nodes: Vec<JoinTreeNode>) -> Option<JoinTreeNode> {
 
 pub fn join_tree(atoms: &Vec<Atom>) -> Vec<Vec<String>> {
     let mut term_set: HashMap<&'static str, HashSet<&Term>> = HashMap::new();
-    //println!("atoms: {:?}", atoms);
-    //BTreeMap keeps order when inserting, hasMap does not but is cheaper (use large data)
     for atom in atoms {
         term_set.insert(atom.name, atom.terms.clone().into_iter().collect());
     }
-    println!("term_set: {:?}", term_set);
     // Remove items that are unique to each set
     for set_name in term_set.keys().cloned().collect::<Vec<_>>() {
         let intersection: HashSet<_> = term_set
@@ -120,7 +114,6 @@ pub fn join_tree(atoms: &Vec<Atom>) -> Vec<Vec<String>> {
         let set = term_set.get_mut(&set_name).unwrap();
         set.retain(|item| intersection.contains(item));
     }
-    //println!("term_set: {:?}", term_set);
 
     // Build the join tree
     let mut join_tree_nodes: Vec<JoinTreeNode> = Vec::new();
@@ -132,12 +125,11 @@ pub fn join_tree(atoms: &Vec<Atom>) -> Vec<Vec<String>> {
         );
         join_tree_nodes.insert(index, current_node);
     }
-    println!("join_tree_nodes: {:?}", join_tree_nodes);
     // build the tree from the nodes
     let join_tree = build_tree(join_tree_nodes.clone());
     // extract information from the join_three for the semijoin
     let mut semi_join_info = get_semi_join_info(&join_tree.unwrap(), None);
-    // remove last element
+    // remove last element (not needed)
     semi_join_info.pop();
     // return the semi_join_info
     semi_join_info
@@ -218,11 +210,10 @@ fn make_boolean_array(
             _ => panic!("Unsupported data type: {:?}", col_r1.data_type()),
         }
     }
-    //println!("bool: {:?}", result);
     BooleanArray::from(result)
 }
 
-// make a boolean array for value depending of the column type:
+// make a boolean array for value depending of the column datatype:
 pub fn make_boolean_array_string(
     relation: &RecordBatch,
     column_index: usize,
@@ -275,7 +266,6 @@ pub fn make_boolean_array_float64(
 }
 
 pub fn reduce(infos: Vec<Vec<String>>, data: &mut HashMap<String, RecordBatch>) {
-    //let infos2 = infos.clone();
     for info in infos {
         // distribute the info from the vector
         let key1 = info[0].clone();
@@ -303,10 +293,8 @@ pub fn reduce(infos: Vec<Vec<String>>, data: &mut HashMap<String, RecordBatch>) 
             record_batch2.unwrap(),
             column_index2,
         );
-        //println!("#true {:?}", boolean_array.true_count());
         // filter relation1
         let filtered_relation1 = filter_record_batch(record_batch1.unwrap(), &boolean_array);
         data.insert(key1.clone(), filtered_relation1.unwrap());
-        //println!("filtered {:?}", filtered);
     }
 }

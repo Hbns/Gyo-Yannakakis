@@ -27,10 +27,8 @@ pub fn acyclic_test(query: &ConjunctiveQuery) {
     while modified {
         let ears_clone = ears.clone(); // Make a clone to check for modifications
         remove_unique_items(&mut ears);
-        println!("removed_unique: {:?}", ears);
         remove_single_item_vectors(&mut ears);
-        println!("removed_single_item: {:?}", ears);
-
+        
         // check if modifications were made
         modified = ears != ears_clone;
     }
@@ -53,7 +51,6 @@ fn collect_ears(query: &ConjunctiveQuery) -> Vec<Vec<&Term>> {
     }
 
     // return the collected ears vector
-    println!("collected_ears: {:?}", ears);
     ears
 }
 // remove all items unique to there ear(vector).
