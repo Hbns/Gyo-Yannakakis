@@ -8,22 +8,13 @@ use std::sync::Arc;
 
 mod queries;
 use queries::{
-    create_cq1, create_cq2, create_cq3, create_cq4, create_cq5, create_cyclic_example_query,
-    create_example_query,
+    create_cq1, create_cq2, create_cq3, create_cq4, create_cq5, 
+    create_cyclic_example_query, create_example_query,
 };
-
-mod gyo;
-use gyo::acyclic_test;
-
-mod jointrees;
-use jointrees::{join_tree, reduce};
 
 mod yannakaki;
 use yannakaki::yannakaki;
-
-mod csvout;
-
-
+// takes a filename and returns a Arrow recordbatch
 fn process_file(file_path: &str, schema: Arc<Schema>) -> Result<RecordBatch, Box<dyn Error>> {
     let file = File::open(file_path)?;
     let mut csv = ReaderBuilder::new(schema).has_header(true).build(file)?;
@@ -52,7 +43,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Create a HashMap to store RecordBatches with keys
     let mut record_batch_map: HashMap<String, RecordBatch> = HashMap::new();
-    
 
     for (file_path, key) in data.iter().zip(keys.iter()) {
         let schema = match csv::infer_schema_from_files(&[file_path.to_string()], b',', None, true)

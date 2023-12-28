@@ -10,7 +10,7 @@ pub enum Term {
 // Define a struct to represent an atom with a relation name and a tuple of terms.
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct Atom {
-    pub name: (&'static str),
+    pub name: &'static str,
     pub terms: Vec<&'static Term>,
 }
 
@@ -22,7 +22,8 @@ pub struct ConjunctiveQuery {
 }
 
 // the rest of the code exist of functions to generate the queries
-// this are all the possible columns, use them for the queries, recordbatch is indexed on column name.
+// this are all the possible columns used for the queries, 
+// recordbatch is indexed on index extracted from column name.
 /*
 // -- beers --
 let beer_id = &Term::Variable("beer_id");

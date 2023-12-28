@@ -15,6 +15,7 @@ use arrow::{
 // forms a connected subtree of T.
 use crate::queries::{Atom, Term};
 
+// struct for a joinTree(node)
 #[derive(Debug, Clone, PartialEq)]
 pub struct JoinTreeNode {
     relation: String,
